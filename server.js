@@ -17,9 +17,7 @@ const allowCrossDomain = (req, res, next) => {
   }
 };
 
-app.configure(() => {
-  app.use(allowCrossDomain);
-});
+app.use(allowCrossDomain);
 
 app.get('/games/:gameId', (req, res) => {
   const gameId = req.params.gameId;
