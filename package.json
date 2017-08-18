@@ -4,11 +4,24 @@
   "description": "A statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:server": "http-server"
   },
   "author": "Serhii Vozniak",
   "license": "MIT",
   "dependencies": {
-    "http-server": "0.10.0"
+    "body-parser": "^1.17.2",
+    "cheerio": "^1.0.0-rc.2",
+    "cheerio-tableparser": "^1.0.1",
+    "express": "^4.15.4",
+    "http-server": "0.10.0",
+    "nodemon": "^1.11.0",
+    "request": "^2.81.0",
+    "xtend": "^4.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^3.1.1",
+    "eslint-config-airbnb-base": "^5.0.0",
+    "eslint-plugin-import": "^1.12.0"
   }
 }
