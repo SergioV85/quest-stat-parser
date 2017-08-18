@@ -8,11 +8,19 @@ const parseLevelTime = (str) => R.pipe(
     R.join('')
   )(str);
 
+const getCorrectTimeFromString = (type, strArray) => R.pipe(
+  R.indexOf(type),
+  R.flip(R.subtract)(1),
+  R.of,
+  R.flip(R.path)(strArray),
+  parseInt
+)(strArray);
+
 const convertStringToTime = (strArray) => ({
-  days: R.contains('д', strArray) ? R.path([R.indexOf('д', strArray) - 1], strArray) : 0,
-  hours: R.contains('ч', strArray) ? R.path([R.indexOf('ч', strArray) - 1], strArray) : 0,
-  minutes: R.contains('м', strArray) ? R.path([R.indexOf('м', strArray) - 1], strArray) : 0,
-  seconds: R.contains('с', strArray) ? R.path([R.indexOf('с', strArray) - 1], strArray) : 0,
+  days: R.contains('д', strArray) ? getCorrectTimeFromString('д', strArray) : 0,
+  hours: R.contains('ч', strArray) ? getCorrectTimeFromString('ч', strArray) : 0,
+  minutes: R.contains('м', strArray) ? getCorrectTimeFromString('м', strArray) : 0,
+  seconds: R.contains('с', strArray) ? getCorrectTimeFromString('с', strArray) : 0,
 });
 
 const parseBonusPenaltyTime = (str) => R.pipe(
