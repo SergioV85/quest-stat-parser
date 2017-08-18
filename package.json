@@ -1,7 +1,7 @@
 {
-  "name": "quest-stat-parser",
+  "name": "quest-stat-parser-server",
   "version": "0.0.1",
-  "description": "A statistic parser for Quest.Ua games",
+  "description": "A server statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
