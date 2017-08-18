@@ -3,9 +3,8 @@ const R = require('ramda');
 const removeUserNameAndLevelTime = (rawString) => R.replace(/\(.*?\)/g, ',', rawString);
 
 const parseLevelTime = (str) => R.pipe(
-    R.split('.'),
-    R.dropLast(1),
-    R.insert(3, 'T'),
+    R.splitAt(10),
+    R.insert(1, 'T'),
     R.join('')
   )(str);
 
