@@ -19,9 +19,6 @@ const allowCrossDomain = (req, res, next) => {
 
 app.configure(() => {
   app.use(allowCrossDomain);
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.get('/games/:gameId', (req, res) => {
