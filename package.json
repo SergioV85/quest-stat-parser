@@ -1,11 +1,14 @@
 {
   "name": "quest-stat-parser",
   "version": "0.0.1",
-  "description": "A statisitc parser for Quest.Ua games",
+  "description": "A statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Serhii Vozniak",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "0.10.0"
+  }
 }
