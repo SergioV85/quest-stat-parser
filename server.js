@@ -12,4 +12,4 @@ app.get('/games/:gameId', (req, res) => {
   });
 });
 
-app.listen(4040);
+app.listen(process.env.PORT || 4040);
