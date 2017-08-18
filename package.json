@@ -16,6 +16,7 @@
     "express": "^4.15.4",
     "http-server": "0.10.0",
     "nodemon": "^1.11.0",
+    "ramda": "^0.24.1",
     "request": "^2.81.0",
     "xtend": "^4.0.1"
   },
