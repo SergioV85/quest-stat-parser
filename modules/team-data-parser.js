@@ -1,6 +1,22 @@
 const R = require('ramda');
+const he = require('he');
 
-const removeUserNameAndLevelTime = (rawString) => R.replace(/\(.*?\)/g, ',', rawString);
+const removeUserNameAndLevelTime = (rawString) => {
+  const tid = R.pipe(
+    R.match(/tid=.*?"/g),
+    R.head,
+    R.replace('tid=', '')
+  )(rawString);
+
+  const matches = R.pipe(
+    R.match(/>.*?</g),
+    R.map(R.slice(1, -1)),
+    R.filter(R.complement(R.isEmpty)),
+    R.prepend(tid)
+  )(rawString);
+  console.log('matches', matches);
+  return R.replace(/\(.*?\)/g, ',', rawString);
+};
 
 const parseLevelTime = (str) => R.pipe(
     R.splitAt(10),
