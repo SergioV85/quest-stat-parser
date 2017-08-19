@@ -1,4 +1,5 @@
 const R = require('ramda');
+const he = require('he');
 
 const convertNameStringToObject = (strArray) => ({
   level: R.head(strArray),
@@ -15,6 +16,7 @@ const convertNameStringToObject = (strArray) => ({
 });
 
 const parseLevelName = (levelStr) => R.pipe(
+    he.decode,
     R.split(':'),
     convertNameStringToObject
   )(levelStr);
