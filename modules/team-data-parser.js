@@ -1,29 +1,6 @@
 const R = require('ramda');
 const he = require('he');
 
-const removeUserNameAndLevelTime = (rawString) => {
-  const tid = R.pipe(
-    R.match(/tid=.*?"/g),
-    R.head,
-    R.replace('tid=', '')
-  )(rawString);
-
-  const matches = R.pipe(
-    R.match(/>.*?</g),
-    R.map(R.slice(1, -1)),
-    R.filter(R.complement(R.isEmpty)),
-    R.prepend(tid)
-  )(rawString);
-  console.log('matches', matches);
-  return R.replace(/\(.*?\)/g, ',', rawString);
-};
-
-const parseLevelTime = (str) => R.pipe(
-    R.splitAt(10),
-    R.insert(1, 'T'),
-    R.join('')
-  )(str);
-
 const getCorrectTimeFromString = (type, strArray) => R.pipe(
   R.indexOf(type),
   R.flip(R.subtract)(1),
@@ -39,37 +16,66 @@ const convertStringToTime = (strArray) => ({
   seconds: R.contains('с', strArray) ? getCorrectTimeFromString('с', strArray) : 0,
 });
 
-const parseBonusPenaltyTime = (str) => R.pipe(
+const parseBonusPenaltyTime = (levelArray, regex) => R.pipe(
+    R.find(R.test(regex)),
     R.replace('бонус ', ''),
+    R.replace('штраф ', ''),
     R.split(' '),
     convertStringToTime
-  )(str);
+  )(levelArray);
 
-const getBonusesPenaltiesTime = (str) => {
-  if (R.test(/бонус/, str)) {
-    return { bonus: parseBonusPenaltyTime(str) };
-  } else if (R.test(/штраф/, str)) {
-    return { penalty: parseBonusPenaltyTime(str) };
+const getBonusesPenaltiesTime = (levelArray) => {
+  if (R.find(R.test(/бонус/))(levelArray)) {
+    const bonusRegex = new RegExp(/бонус/);
+    return { bonus: parseBonusPenaltyTime(levelArray, bonusRegex) };
+  } else if (R.find(R.test(/штраф/))(levelArray)) {
+    const penaltyRegex = new RegExp(/штраф/);
+    return { penalty: parseBonusPenaltyTime(levelArray, penaltyRegex) };
   }
   return undefined;
 };
 
-const parseBonusesAndPenalties = (str) => R.pipe(
-    R.replace('таймаут', ''),
-    getBonusesPenaltiesTime
-  )(str);
+const levelInfo = (rawString) => R.pipe(
+  he.decode,
+  R.match(/>.*?</g),
+  R.map(R.slice(1, -1)),
+  R.filter(R.complement(R.isEmpty))
+)(rawString);
 
-const parseTeamString = (teamString) => ({
-  name: R.pathOr('', [0], teamString),
-  time: R.isNil(R.path([1], teamString)) ? null : parseLevelTime(teamString[1]),
-  additions: R.isNil(R.path([2], teamString)) ? null : parseBonusesAndPenalties(teamString[2]),
+const getTeamId = (rawString) => R.pipe(
+  R.match(/tid=\d*/g),
+  R.head,
+  R.replace('tid=', ''),
+  parseInt
+)(rawString);
+
+const getTeamName = (rawString) => R.pipe(
+  levelInfo,
+  R.head
+)(rawString);
+
+const getLevelTime = (rawString) => R.pipe(
+  levelInfo,
+  R.slice(4, 6),
+  R.insert(1, 'T'),
+  R.join('')
+)(rawString);
+
+const getBonusPenaltyTime = (rawString) => R.pipe(
+  levelInfo,
+  getBonusesPenaltiesTime
+)(rawString);
+
+const convertStringToObject = (rawString) => ({
+  id: getTeamId(rawString),
+  name: getTeamName(rawString),
+  levelTime: getLevelTime(rawString),
+  additionsTime: getBonusPenaltyTime(rawString)
 });
 
 const getTeamData = (team) => R.pipe(
     R.slice(1, -1),
-    R.map(removeUserNameAndLevelTime),
-    R.map(R.split(',')),
-    R.map(parseTeamString)
+    R.map(convertStringToObject)
   )(team);
 
 exports.getTeamData = (stat) => R.map(getTeamData, stat);
