@@ -23,6 +23,7 @@ exports.parseGameStat = (data, gameInfo) => {
   return {
     levels: levelNameParser.getNames(statOnly),
     dataByTeam: teamDataParser.getStatByTeam(levelsData),
-    dataByLevels: teamDataParser.getStatByLevel(levelsData)
+    dataByLevels: teamDataParser.getStatByLevel(levelsData),
+    dataByFinishTime: teamDataParser.getStatByTime(levelsData),
   };
 };

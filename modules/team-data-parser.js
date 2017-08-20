@@ -110,6 +110,11 @@ const groupByLevel = (levelList) => R.pipe(
   R.map(highlightBestResult)
 )(levelList);
 
+const convertObjToArr = (data, id) => ({
+  id,
+  data
+});
+
 exports.getStat = (stat, gameData) => R.pipe(
   R.addIndex(R.map)(R.curry(getTeamData)(gameData)),
   R.flatten,
@@ -120,7 +125,19 @@ exports.getStatByTeam = (levelData) => R.pipe(
   groupByLevel,
   R.values,
   R.flatten,
-  R.groupBy((level) => level.id)
+  R.groupBy((level) => level.id),
+  R.mapObjIndexed(convertObjToArr),
+  R.values
 )(levelData);
 
-exports.getStatByLevel = (levelData) => groupByLevel(levelData);
+exports.getStatByLevel = (levelData) => R.pipe(
+  groupByLevel,
+  R.mapObjIndexed(convertObjToArr),
+  R.values
+)(levelData);
+
+exports.getStatByTime = (levelData) => R.pipe(
+  groupByLevel,
+  R.values,
+  R.transpose
+)(levelData);
