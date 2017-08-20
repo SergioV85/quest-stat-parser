@@ -42,7 +42,7 @@ app.post('/games/', (req, res) => {
       return request(`http://${domain}/GameStat.aspx?gid=${gameId}`);
     })
     .then((stat) => {
-      gameData.stat = htmlParser.parseGameStat(stat);
+      gameData.stat = htmlParser.parseGameStat(stat, gameData.info);
       res.send(gameData);
     })
     .catch((error) => {

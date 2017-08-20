@@ -14,13 +14,15 @@ exports.parseGameInfo = (data) => {
   return gameInfoParser.getGameInfo(parsedData);
 };
 
-exports.parseGameStat = (data) => {
+exports.parseGameStat = (data, gameInfo) => {
   const $ = cheerio.load(data);
   cheerioTableparser($);
   const parsedData = $('.DataTable').parsetable(true, true, false);
   const statOnly = removeObsoleteData(parsedData);
+  const levelsData = teamDataParser.getStat(statOnly, gameInfo);
   return {
     levels: levelNameParser.getNames(statOnly),
-    teamData: teamDataParser.getTeamData(statOnly)
+    dataByTeam: teamDataParser.getStatByTeam(levelsData),
+    dataByLevels: teamDataParser.getStatByLevel(levelsData)
   };
 };
