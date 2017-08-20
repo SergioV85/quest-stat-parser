@@ -1,5 +1,7 @@
 const express = require('express');
-const request = require('request');
+const request = require('request-promise');
+const bodyParser = require('body-parser');
+const R = require('ramda');
 const htmlParser = require('./modules/html-parser.js');
 
 const app = express();
@@ -18,13 +20,34 @@ const allowCrossDomain = (req, res, next) => {
 };
 
 app.use(allowCrossDomain);
+app.use(bodyParser.json()); // support json encoded bodies
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-app.get('/games/:gameId', (req, res) => {
-  const gameId = req.params.gameId;
-  request(`http://quest.ua/GameStat.aspx?gid=${gameId}`, (error, response, body) => {
-    const parsedHtml = htmlParser.parseHtml(body);
-    res.send(parsedHtml);
-  });
+app.post('/games/', (req, res) => {
+  const gameId = R.path(['body', 'id'], req);
+  const domain = R.path(['body', 'domain'], req);
+
+  if (R.isNil(gameId) || R.isNil(domain)) {
+    res.status(400).send('Bad Request');
+  }
+
+  const gameData = {
+    info: null,
+    stat: null
+  };
+
+  request(`http://${domain}/GameDetails.aspx?gid=${gameId}`)
+    .then((data) => {
+      gameData.info = htmlParser.parseGameInfo(data);
+      return request(`http://${domain}/GameStat.aspx?gid=${gameId}`);
+    })
+    .then((stat) => {
+      gameData.stat = htmlParser.parseGameStat(stat, gameData.info);
+      res.send(gameData);
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
 });
 
 app.listen(process.env.PORT || 4040);
