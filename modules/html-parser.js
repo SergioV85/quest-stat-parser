@@ -22,9 +22,8 @@ exports.parseGameStat = (data, gameInfo) => {
   const levelsData = teamDataParser.getStat(statOnly, gameInfo);
   return {
     levels: levelNameParser.getNames(statOnly),
-    levelsData,
     dataByTeam: teamDataParser.getStatByTeam(levelsData),
     dataByLevels: teamDataParser.getStatByLevel(levelsData),
-    dataByFinishTime: teamDataParser.getStatByTime(levelsData),
+    finishResults: teamDataParser.getFinishResults(statOnly, gameInfo)
   };
 };

@@ -75,7 +75,7 @@ const convertStringToObject = (levelIdx, gameData, rawString) => ({
 });
 
 const assignIndexToLevelData = (idx, gameData, lvl) => R.pipe(
-  R.filter(R.anyPass([R.test(/dataCell/g), R.test(/wrapper/g)])),
+  R.filter(R.test(/dataCell/g)),
   R.map(R.curry(convertStringToObject)(idx, gameData))
 )(lvl);
 
@@ -84,7 +84,7 @@ const getTeamData = (gameData, team, idx) => R.pipe(
   R.curry(assignIndexToLevelData)(idx, gameData)
 )(team);
 
-const calculateLeveLDuration = (gameData, level, idx, list) => {
+const calculateLeveDuration = (gameData, level, idx, list) => {
   const matchTeamId = R.propEq('id', level.id);
   const matchPrevLevelIdx = R.propEq('levelIdx', R.subtract(level.levelIdx, 1));
   const matchConditions = R.allPass([matchTeamId, matchPrevLevelIdx]);
@@ -96,6 +96,10 @@ const calculateLeveLDuration = (gameData, level, idx, list) => {
     duration: moment(level.levelTime).diff(moment(prevLevelTime))
   });
 };
+
+const calculateGameDuration = (gameData, level) => R.merge(level, {
+  duration: moment(level.levelTime).diff(moment(gameData.gameStart))
+});
 
 const highlightBestResult = (levelStat) => {
   const byDuration = R.ascend(R.prop('duration'));
@@ -110,14 +114,14 @@ const groupByLevel = R.pipe(
   R.map(highlightBestResult));
 
 const convertObjToArr = (data, id) => ({
-  id,
+  id: parseInt(id, 10),
   data
 });
 
 exports.getStat = (stat, gameData) => R.pipe(
   R.addIndex(R.map)(R.curry(getTeamData)(gameData)),
   R.flatten,
-  R.addIndex(R.map)(R.curry(calculateLeveLDuration)(gameData))
+  R.addIndex(R.map)(R.curry(calculateLeveDuration)(gameData))
 )(stat);
 
 exports.getStatByTeam = R.pipe(
@@ -132,8 +136,10 @@ exports.getStatByLevel = R.pipe(
   groupByLevel,
   R.mapObjIndexed(convertObjToArr),
   R.values);
-
-exports.getStatByTime = R.pipe(
-  groupByLevel,
-  R.values,
-  R.transpose);
+exports.getFinishResults = (stat, gameData) => R.pipe(
+  R.map(R.slice(1, -1)),
+  R.filter(R.test(/wrapper/g)),
+  R.flatten,
+  R.map(R.curry(convertStringToObject)(null, gameData)),
+  R.map(R.curry(calculateGameDuration)(gameData))
+)(stat);

@@ -6,24 +6,22 @@ const convertNameStringToObject = (strArray) => ({
   name: R.pipe(
     R.tail,
     R.join(' '),
-    R.replace('Уровень снят', ''),
+    R.replace('<br><span class="dismissed">Уровень снят</span>', ''),
     R.trim
   )(strArray),
   removed: R.pipe(
     R.join(' '),
-    R.test(/Уровень снят/g)
+    R.test(/dismissed/g)
   )(strArray)
 });
 
-const parseLevelName = (levelStr) => R.pipe(
+const parseLevelName = R.pipe(
     he.decode,
     R.split(':'),
-    convertNameStringToObject
-  )(levelStr);
+    convertNameStringToObject);
 
-const getLevelData = (col) => R.pipe(
+const getLevelData = R.pipe(
   R.pathOr([], [0]),
-  parseLevelName
-)(col);
+  parseLevelName);
 
 exports.getNames = (stat) => R.map(getLevelData, stat);
