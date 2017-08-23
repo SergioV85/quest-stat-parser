@@ -38,38 +38,33 @@ const getBonusesPenaltiesTime = (levelArray) => {
   return undefined;
 };
 
-const levelInfo = (rawString) => R.pipe(
-  he.decode,
-  R.match(/>.*?</g),
-  R.map(R.slice(1, -1)),
-  R.filter(R.complement(R.isEmpty))
-)(rawString);
-
-const getTeamId = (rawString) => R.pipe(
+const getTeamId = R.pipe(
   R.match(/tid=\d*/g),
   R.head,
   R.replace('tid=', ''),
-  parseInt
-)(rawString);
+  parseInt);
 
-const getTeamName = (rawString) => R.pipe(
-  levelInfo,
-  R.head
-)(rawString);
+const getTeamName = R.pipe(
+  he.decode,
+  R.match(/tid=\d*\W*.*<\/a>/g),
+  R.head,
+  R.match(/>.*?</g),
+  R.head,
+  R.slice(1, -1));
 
 const getLevelTime = (rawString, gameData) => R.pipe(
-  levelInfo,
-  R.slice(4, 6),
+  he.decode,
+  R.match(/(\d{2}.\d{2}.\d{4}|\d{2}:\d{2}:\d{2}.\d{3})/g),
   R.insert(1, 'T'),
   R.append(R.pathOr('Z', ['gameTimeZone'], gameData)),
   R.join(''),
   timeParser.convertTime
 )(rawString);
 
-const getBonusPenaltyTime = (rawString) => R.pipe(
-  levelInfo,
-  getBonusesPenaltiesTime
-)(rawString);
+const getBonusPenaltyTime = R.pipe(
+  he.decode,
+  R.match(/(бонус|штраф)[а-яА-Я0-9 ]*/g),
+  getBonusesPenaltiesTime);
 
 const convertStringToObject = (levelIdx, gameData, rawString) => ({
   id: getTeamId(rawString),
@@ -79,7 +74,10 @@ const convertStringToObject = (levelIdx, gameData, rawString) => ({
   additionsTime: getBonusPenaltyTime(rawString)
 });
 
-const assignIndexToLevelData = (idx, gameData, lvl) => R.map(R.curry(convertStringToObject)(idx, gameData), lvl);
+const assignIndexToLevelData = (idx, gameData, lvl) => R.pipe(
+  R.filter(R.anyPass([R.test(/dataCell/g), R.test(/wrapper/g)])),
+  R.map(R.curry(convertStringToObject)(idx, gameData))
+)(lvl);
 
 const getTeamData = (gameData, team, idx) => R.pipe(
   R.slice(1, -1),
@@ -90,7 +88,9 @@ const calculateLeveLDuration = (gameData, level, idx, list) => {
   const matchTeamId = R.propEq('id', level.id);
   const matchPrevLevelIdx = R.propEq('levelIdx', R.subtract(level.levelIdx, 1));
   const matchConditions = R.allPass([matchTeamId, matchPrevLevelIdx]);
-  const prevLevelTime = level.levelIdx === 0 ? gameData.gameStart : R.find(matchConditions)(list).levelTime;
+  const prevLevel = R.find(matchConditions)(list);
+  const lastLevel = idx === (list.length - 1);
+  const prevLevelTime = R.isNil(prevLevel) || lastLevel ? gameData.gameStart : prevLevel.levelTime;
 
   return R.merge(level, {
     duration: moment(level.levelTime).diff(moment(prevLevelTime))
@@ -105,10 +105,9 @@ const highlightBestResult = (levelStat) => {
   }), levelStat);
 };
 
-const groupByLevel = (levelList) => R.pipe(
+const groupByLevel = R.pipe(
   R.groupBy((level) => level.levelIdx),
-  R.map(highlightBestResult)
-)(levelList);
+  R.map(highlightBestResult));
 
 const convertObjToArr = (data, id) => ({
   id,
@@ -121,23 +120,20 @@ exports.getStat = (stat, gameData) => R.pipe(
   R.addIndex(R.map)(R.curry(calculateLeveLDuration)(gameData))
 )(stat);
 
-exports.getStatByTeam = (levelData) => R.pipe(
+exports.getStatByTeam = R.pipe(
   groupByLevel,
   R.values,
   R.flatten,
   R.groupBy((level) => level.id),
   R.mapObjIndexed(convertObjToArr),
-  R.values
-)(levelData);
+  R.values);
 
-exports.getStatByLevel = (levelData) => R.pipe(
+exports.getStatByLevel = R.pipe(
   groupByLevel,
   R.mapObjIndexed(convertObjToArr),
-  R.values
-)(levelData);
+  R.values);
 
-exports.getStatByTime = (levelData) => R.pipe(
+exports.getStatByTime = R.pipe(
   groupByLevel,
   R.values,
-  R.transpose
-)(levelData);
+  R.transpose);

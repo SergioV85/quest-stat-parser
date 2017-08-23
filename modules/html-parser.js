@@ -5,7 +5,7 @@ const gameInfoParser = require('./game-info-parser.js');
 const levelNameParser = require('./level-name-parser.js');
 const teamDataParser = require('./team-data-parser.js');
 
-const removeObsoleteData = (rawData) => R.slice(1, -3, rawData);
+const removeObsoleteData = (rawData) => R.slice(1, -2, rawData);
 
 exports.parseGameInfo = (data) => {
   const $ = cheerio.load(data);
@@ -22,6 +22,7 @@ exports.parseGameStat = (data, gameInfo) => {
   const levelsData = teamDataParser.getStat(statOnly, gameInfo);
   return {
     levels: levelNameParser.getNames(statOnly),
+    levelsData,
     dataByTeam: teamDataParser.getStatByTeam(levelsData),
     dataByLevels: teamDataParser.getStatByLevel(levelsData),
     dataByFinishTime: teamDataParser.getStatByTime(levelsData),
