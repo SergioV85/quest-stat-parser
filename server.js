@@ -1,8 +1,10 @@
 const express = require('express');
 const request = require('request-promise');
 const bodyParser = require('body-parser');
+require('dotenv').config();
 const R = require('ramda');
 const htmlParser = require('./modules/html-parser.js');
+const dbConnection = require('./modules/database-connection.js');
 
 const app = express();
 
@@ -36,9 +38,16 @@ app.post('/games/', (req, res) => {
     stat: null
   };
 
-  request(`http://${domain}/GameDetails.aspx?gid=${gameId}`)
+  dbConnection.getGameInfoFromDatabase(gameId)
+    .then((results) => {
+      if (R.isEmpty(results)) {
+        return htmlParser.getGameInfo(domain, gameId)
+          .then((parsedGameData) => dbConnection.saveGameInfoToDatabase(parsedGameData));
+      }
+      return R.head(results);
+    })
     .then((data) => {
-      gameData.info = htmlParser.parseGameInfo(data);
+      gameData.info = data;
       return request(`http://${domain}/GameStat.aspx?gid=${gameId}`);
     })
     .then((stat) => {

@@ -8,7 +8,16 @@ const convertTimeZone = (number) => {
 };
 
 const getGameInfo = (row) => {
-  const timeZone = R.pipe(
+  const name = R.pipe(
+    R.find(R.test(/lnkGameTitle/)),
+    R.match(/gid=\d{1,10}">.*<\/a>/g),
+    R.head,
+    R.match(/>.*?</g),
+    R.head,
+    R.slice(1, -1)
+  )(row);
+
+  const timezone = R.pipe(
     R.find(R.test(/Начало игры/)),
     R.replace(/<.*?>/g, ''),
     R.match(/\d+/g),
@@ -17,7 +26,7 @@ const getGameInfo = (row) => {
     convertTimeZone
   )(row);
 
-  const gameTime = R.pipe(
+  const start = R.pipe(
     R.find(R.test(/Начало игры/)),
     R.replace(/<.*?>/g, ''),
     R.split(' '),
@@ -27,11 +36,12 @@ const getGameInfo = (row) => {
     R.last
   )(row);
 
-  const stringWithTimeZone = `${gameTime}${timeZone}`;
+  const stringWithTimeZone = `${start}${timezone}`;
 
   return {
-    gameStart: timeParser.convertTime(stringWithTimeZone),
-    gameTimeZone: timeZone
+    start: timeParser.convertTime(stringWithTimeZone),
+    timezone,
+    name
   };
 };
 

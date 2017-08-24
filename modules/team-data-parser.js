@@ -56,7 +56,7 @@ const getLevelTime = (rawString, gameData) => R.pipe(
   he.decode,
   R.match(/(\d{2}.\d{2}.\d{4}|\d{2}:\d{2}:\d{2}.\d{3})/g),
   R.insert(1, 'T'),
-  R.append(R.pathOr('Z', ['gameTimeZone'], gameData)),
+  R.append(R.pathOr('Z', ['timezone'], gameData)),
   R.join(''),
   timeParser.convertTime
 )(rawString);
@@ -90,7 +90,7 @@ const calculateLeveDuration = (gameData, level, idx, list) => {
   const matchConditions = R.allPass([matchTeamId, matchPrevLevelIdx]);
   const prevLevel = R.find(matchConditions)(list);
   const lastLevel = idx === (list.length - 1);
-  const prevLevelTime = R.isNil(prevLevel) || lastLevel ? gameData.gameStart : prevLevel.levelTime;
+  const prevLevelTime = R.isNil(prevLevel) || lastLevel ? gameData.start : prevLevel.levelTime;
 
   return R.merge(level, {
     duration: moment(level.levelTime).diff(moment(prevLevelTime))
@@ -98,7 +98,7 @@ const calculateLeveDuration = (gameData, level, idx, list) => {
 };
 
 const calculateGameDuration = (gameData, level) => R.merge(level, {
-  duration: moment(level.levelTime).diff(moment(gameData.gameStart))
+  duration: moment(level.levelTime).diff(moment(gameData.start))
 });
 
 const highlightBestResult = (levelStat) => {

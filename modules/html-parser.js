@@ -1,3 +1,4 @@
+const request = require('request-promise');
 const cheerio = require('cheerio');
 const cheerioTableparser = require('cheerio-tableparser');
 const R = require('ramda');
@@ -7,7 +8,7 @@ const teamDataParser = require('./team-data-parser.js');
 
 const removeObsoleteData = (rawData) => R.slice(1, -2, rawData);
 
-exports.parseGameInfo = (data) => {
+const parseGameInfo = (data) => {
   const $ = cheerio.load(data);
   cheerioTableparser($);
   const parsedData = $('.gameInfo').parsetable(true, true, false);
@@ -27,3 +28,9 @@ exports.parseGameStat = (data, gameInfo) => {
     finishResults: teamDataParser.getFinishResults(statOnly, gameInfo)
   };
 };
+
+exports.getGameInfo = (domain, gameId) => request(`http://${domain}/GameDetails.aspx?gid=${gameId}`)
+  .then((gameInfoHtml) => R.merge(parseGameInfo(gameInfoHtml), {
+    id: gameId,
+    domain
+  }));
