@@ -1,44 +1,66 @@
-const { Pool } = require('pg');
-const url = require('url');
 
-const params = url.parse(process.env.DATABASE_URL);
-const auth = params.auth.split(':');
+const R = require('ramda');
+const Promise = require('bluebird');
+const pgp = require('pg-promise')({
+  promiseLib: Promise,
+  capSQL: true
+});
 
-const config = {
-  user: auth[0],
-  password: auth[1],
-  host: params.hostname,
-  port: params.port,
-  database: params.pathname.split('/')[1],
-  ssl: true,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000
-};
+const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
 
-const createConnection = () => new Pool(config);
+const dbRequest = (preparedRequest) => db.oneOrNone(preparedRequest)
+  .then((data) => data)
+  .catch((error) => {
+    throw error;
+  });
 
-exports.getGameInfoFromDatabase = (gameId) => {
-  const connection = createConnection();
+exports.getGameInfoFromDatabase = (gameId) => dbRequest({
+  name: 'get-game',
+  text: 'SELECT id, domain, name, start, timezone FROM quest.games WHERE id = $1',
+  values: [gameId]
+});
 
-  return connection.query(`SELECT id, domain, name, start, timezone FROM quest.games WHERE id = ${gameId}`)
-    .then((data) => data.rows)
+exports.getLevelFromDatabase = (gameId) =>
+  dbRequest({
+    name: 'get-levels',
+    text: 'SELECT id, name, position, type, removed FROM quest.levels WHERE game_id = $1',
+    values: [gameId]
+  });
+
+
+exports.saveGameInfoToDatabase = ({ id, name, domain, start, timezone }) => db
+  .none(`INSERT 
+    INTO quest.games 
+    (id, domain, name, start, timezone) 
+    VALUES
+    (${id}, '${domain}', '${name}', '${start}', '${timezone}')`)
+  .then(() => ({ id, name, domain, start, timezone }))
+  .catch((error) => {
+    throw error;
+  });
+
+exports.saveLevelsToDatabase = (gameInfo, { levels, dataByTeam, dataByLevels, finishResults }) => {
+  const getLevelNumber = (level) => (isNaN(level.level) ? 0 : parseInt(level.level, 10));
+
+  const cs = new pgp.helpers.ColumnSet(
+    ['id', 'game_id', 'level', 'name', 'position', 'removed', 'type'], {
+      table: {
+        table: 'levels',
+        schema: 'quest'
+      }
+    });
+  const values = R.map((level) => R.merge(level, {
+    id: (gameInfo.id + (getLevelNumber(level) / 1000)) * 1000,
+    game_id: gameInfo.id,
+    level: getLevelNumber(level)
+  }), levels);
+
+  const query = pgp.helpers.insert(values, cs);
+
+  return db.none(query)
+    .then(() => ({ levels, dataByTeam, dataByLevels, finishResults }))
     .catch((error) => {
       throw error.stack;
     });
 };
 
-exports.saveGameInfoToDatabase = ({ id, name, domain, start, timezone }) => {
-  const connection = createConnection();
-
-  return connection
-    .query(`INSERT 
-      INTO quest.games 
-      (id, domain, name, start, timezone) 
-      VALUES
-      (${id}, '${domain}', '${name}', '${start}', '${timezone}')`)
-    .then(() => ({ id, name, domain, start, timezone }))
-    .catch((error) => {
-      throw error.stack;
-    });
-};

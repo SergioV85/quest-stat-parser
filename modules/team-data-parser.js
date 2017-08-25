@@ -139,6 +139,7 @@ exports.getStatByLevel = R.pipe(
 exports.getFinishResults = (stat, gameData) => R.pipe(
   R.map(R.slice(1, -1)),
   R.filter(R.test(/wrapper/g)),
+  R.head,
   R.flatten,
   R.map(R.curry(convertStringToObject)(null, gameData)),
   R.map(R.curry(calculateGameDuration)(gameData))

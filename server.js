@@ -1,5 +1,4 @@
 const express = require('express');
-const request = require('request-promise');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const R = require('ramda');
@@ -40,18 +39,25 @@ app.post('/games/', (req, res) => {
 
   dbConnection.getGameInfoFromDatabase(gameId)
     .then((results) => {
-      if (R.isEmpty(results)) {
+      if (R.isNil(results)) {
         return htmlParser.getGameInfo(domain, gameId)
           .then((parsedGameData) => dbConnection.saveGameInfoToDatabase(parsedGameData));
       }
-      return R.head(results);
+      return results;
     })
     .then((data) => {
       gameData.info = data;
-      return request(`http://${domain}/GameStat.aspx?gid=${gameId}`);
+      return dbConnection.getLevelFromDatabase(gameId);
+    })
+    .then((levels) => {
+      if (R.isNil(levels)) {
+        return htmlParser.getGameStat(domain, gameId, gameData.info)
+          .then((gameStat) => dbConnection.saveLevelsToDatabase(gameData.info, gameStat));
+      }
+      return levels;
     })
     .then((stat) => {
-      gameData.stat = htmlParser.parseGameStat(stat, gameData.info);
+      gameData.stat = stat;
       res.send(gameData);
     })
     .catch((error) => {

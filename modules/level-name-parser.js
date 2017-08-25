@@ -1,7 +1,7 @@
 const R = require('ramda');
 const he = require('he');
 
-const convertNameStringToObject = (strArray) => ({
+const convertNameStringToObject = (index, strArray) => ({
   level: R.head(strArray),
   name: R.pipe(
     R.tail,
@@ -9,19 +9,36 @@ const convertNameStringToObject = (strArray) => ({
     R.replace('<br><span class="dismissed">Уровень снят</span>', ''),
     R.trim
   )(strArray),
+  position: index,
+  type: 0,
   removed: R.pipe(
     R.join(' '),
     R.test(/dismissed/g)
   )(strArray)
 });
 
-const parseLevelName = R.pipe(
-    he.decode,
-    R.split(':'),
-    convertNameStringToObject);
+const parseLevelName = (index, string) => R.pipe(
+  he.decode,
+  R.split(':'),
+  R.curry(convertNameStringToObject)(index)
+)(string);
 
-const getLevelData = R.pipe(
+const dropTwoFinishResults = (data) => {
+  const isLastLever = R.isEmpty(R.prop('name'));
+
+  return R.concat(
+    R.dropLastWhile(isLastLever)(data),
+    R.pipe(
+      R.takeLastWhile(isLastLever),
+      R.head
+    )(data)
+  );
+};
+
+const getLevelData = (level, index) => R.pipe(
   R.pathOr([], [0]),
-  parseLevelName);
+  R.curry(parseLevelName)(index),
+  dropTwoFinishResults
+)(level);
 
-exports.getNames = (stat) => R.map(getLevelData, stat);
+exports.getNames = (stat) => R.addIndex(R.map)(getLevelData, stat);

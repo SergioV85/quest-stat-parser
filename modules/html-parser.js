@@ -6,7 +6,7 @@ const gameInfoParser = require('./game-info-parser.js');
 const levelNameParser = require('./level-name-parser.js');
 const teamDataParser = require('./team-data-parser.js');
 
-const removeObsoleteData = (rawData) => R.slice(1, -2, rawData);
+const removeObsoleteData = (rawData) => R.slice(1, -1, rawData);
 
 const parseGameInfo = (data) => {
   const $ = cheerio.load(data);
@@ -15,17 +15,41 @@ const parseGameInfo = (data) => {
   return gameInfoParser.getGameInfo(parsedData);
 };
 
-exports.parseGameStat = (data, gameInfo) => {
+const parseGameStat = (data, gameInfo) => {
   const $ = cheerio.load(data);
   cheerioTableparser($);
   const parsedData = $('.DataTable').parsetable(true, true, false);
   const statOnly = removeObsoleteData(parsedData);
   const levelsData = teamDataParser.getStat(statOnly, gameInfo);
+  let levels;
+  let dataByTeam;
+  let dataByLevels;
+  let finishResults;
+  try {
+    levels = levelNameParser.getNames(statOnly);
+  } catch (err) {
+    throw err;
+  }
+  try {
+    dataByTeam = teamDataParser.getStatByTeam(levelsData);
+  } catch (err) {
+    throw err;
+  }
+  try {
+    dataByLevels = teamDataParser.getStatByLevel(levelsData);
+  } catch (err) {
+    throw err;
+  }
+  try {
+    finishResults = teamDataParser.getFinishResults(statOnly, gameInfo);
+  } catch (err) {
+    throw err;
+  }
   return {
-    levels: levelNameParser.getNames(statOnly),
-    dataByTeam: teamDataParser.getStatByTeam(levelsData),
-    dataByLevels: teamDataParser.getStatByLevel(levelsData),
-    finishResults: teamDataParser.getFinishResults(statOnly, gameInfo)
+    levels,
+    dataByTeam,
+    dataByLevels,
+    finishResults
   };
 };
 
@@ -34,3 +58,6 @@ exports.getGameInfo = (domain, gameId) => request(`http://${domain}/GameDetails.
     id: gameId,
     domain
   }));
+
+exports.getGameStat = (domain, gameId, gameInfo) => request(`http://${domain}/GameStat.aspx?gid=${gameId}`)
+  .then((gameStatHtml) => parseGameStat(gameStatHtml, gameInfo));
