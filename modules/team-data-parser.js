@@ -89,8 +89,7 @@ const calculateLeveDuration = (gameData, level, idx, list) => {
   const matchPrevLevelIdx = R.propEq('levelIdx', R.subtract(level.levelIdx, 1));
   const matchConditions = R.allPass([matchTeamId, matchPrevLevelIdx]);
   const prevLevel = R.find(matchConditions)(list);
-  const lastLevel = idx === (list.length - 1);
-  const prevLevelTime = R.isNil(prevLevel) || lastLevel ? gameData.start : prevLevel.levelTime;
+  const prevLevelTime = R.isNil(prevLevel) ? gameData.start : prevLevel.levelTime;
 
   return R.merge(level, {
     duration: moment(level.levelTime).diff(moment(prevLevelTime))

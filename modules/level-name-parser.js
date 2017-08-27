@@ -24,21 +24,22 @@ const parseLevelName = (index, string) => R.pipe(
 )(string);
 
 const dropTwoFinishResults = (data) => {
-  const isLastLever = R.isEmpty(R.prop('name'));
-
-  return R.concat(
-    R.dropLastWhile(isLastLever)(data),
+  const isStatLevel = (level) => isNaN(level.level);
+  return R.append(
     R.pipe(
-      R.takeLastWhile(isLastLever),
+      R.filter(isStatLevel),
       R.head
-    )(data)
+    )(data),
+    R.filter(R.complement(isStatLevel))(data)
   );
 };
 
 const getLevelData = (level, index) => R.pipe(
   R.pathOr([], [0]),
-  R.curry(parseLevelName)(index),
-  dropTwoFinishResults
+  R.curry(parseLevelName)(index)
 )(level);
 
-exports.getNames = (stat) => R.addIndex(R.map)(getLevelData, stat);
+exports.getNames = R.pipe(
+  R.addIndex(R.map)(getLevelData),
+  dropTwoFinishResults
+);

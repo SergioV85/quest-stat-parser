@@ -39,20 +39,20 @@ app.post('/games/', (req, res) => {
 
   dbConnection.getGameInfoFromDatabase(gameId)
     .then((results) => {
-      if (R.isNil(results)) {
+      if (R.isNil(results) || R.isEmpty(results)) {
         return htmlParser.getGameInfo(domain, gameId)
           .then((parsedGameData) => dbConnection.saveGameInfoToDatabase(parsedGameData));
       }
-      return results;
+      return R.head(results);
     })
     .then((data) => {
       gameData.info = data;
       return dbConnection.getLevelFromDatabase(gameId);
     })
     .then((levels) => {
-      if (R.isNil(levels)) {
+      if (R.isNil(levels) || R.isEmpty(levels)) {
         return htmlParser.getGameStat(domain, gameId, gameData.info)
-          .then((gameStat) => dbConnection.saveLevelsToDatabase(gameData.info, gameStat));
+          .then((gameStat) => dbConnection.saveGameDataToDatabase(gameData.info, gameStat));
       }
       return levels;
     })
