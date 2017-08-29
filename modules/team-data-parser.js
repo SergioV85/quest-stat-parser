@@ -30,10 +30,10 @@ const parseBonusPenaltyTime = (levelArray, regex) => R.pipe(
 const getBonusesPenaltiesTime = (levelArray) => {
   if (R.find(R.test(/бонус/))(levelArray)) {
     const bonusRegex = new RegExp(/бонус/);
-    return { bonus: parseBonusPenaltyTime(levelArray, bonusRegex) };
+    return parseBonusPenaltyTime(levelArray, bonusRegex);
   } else if (R.find(R.test(/штраф/))(levelArray)) {
     const penaltyRegex = new RegExp(/штраф/);
-    return { penalty: parseBonusPenaltyTime(levelArray, penaltyRegex) };
+    return R.negate(parseBonusPenaltyTime(levelArray, penaltyRegex));
   }
   return undefined;
 };

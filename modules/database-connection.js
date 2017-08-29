@@ -6,7 +6,7 @@ const pgp = require('pg-promise')({
   capSQL: true
 });
 
-const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
+const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
 
 const getLevelId = (gameInfo, levelIndex) => ((gameInfo.id + (levelIndex / 1000)) * 1000);
 
@@ -60,7 +60,9 @@ const saveTeamsToDatabase = (dataByTeam) => {
 
 const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
   const cs = new pgp.helpers.ColumnSet(
-    ['id', 'game_id', 'level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name'], {
+    ['addition_time', 'id', 'game_id',
+      'level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name'],
+    {
       table: {
         table: 'stat',
         schema: 'quest'
@@ -72,6 +74,7 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
     const levelId = getLevelId(gameInfo, levelIdx);
 
     const dbObject = {
+      addition_time: levelStat.additionsTime,
       id: `${levelId}_${levelStat.id}`,
       game_id: gameInfo.id,
       level_id: levelId,
@@ -104,6 +107,42 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
   return db.none(query);
 };
 
+const converDbStat = (stat) => ({
+  bestTime: stat.best_time,
+  duration: stat.duration,
+  id: stat.team_id,
+  levelIdx: stat.level_idx,
+  levelTime: stat.level_time,
+  name: stat.team_name,
+  additionsTime: stat.addition_time
+});
+
+const convertObjToArr = (data, id) => ({
+  id: parseInt(id, 10),
+  data
+});
+
+const getlastLevelIdx = R.pipe(
+  R.map((level) => level.level_idx),
+  R.sort((a, b) => a - b),
+  R.last);
+
+const filterFinishStat = (comparsionFunction, stat) => {
+  const lastLevelIdx = getlastLevelIdx(stat);
+
+  return R.pipe(
+    R.filter((level) => comparsionFunction(level.level_idx, lastLevelIdx)),
+    R.map(converDbStat)
+  )(stat);
+};
+
+const groupStatBy = (stat, fieldName) => R.pipe(
+  R.curry(filterFinishStat)(R.complement(R.equals)),
+  R.groupBy((level) => level[fieldName]),
+  R.mapObjIndexed(convertObjToArr),
+  R.values
+)(stat);
+
 exports.getGameInfoFromDatabase = (gameId) => dbRequest({
   name: 'get-game',
   text: 'SELECT id, domain, name, start, timezone FROM quest.games WHERE id = $1',
@@ -118,7 +157,8 @@ exports.getLevelFromDatabase = (gameId) => {
     levels: []
   };
   const levelRequest = ['id', 'name', 'level', 'position', 'type', 'removed'];
-  const statRequest = ['level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name'];
+  const statRequest =
+    ['addition_time', 'level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name'];
 
   return dbRequest({
     name: 'get-levels',
@@ -140,9 +180,9 @@ exports.getLevelFromDatabase = (gameId) => {
     if (R.isNil(stat) || R.isEmpty(stat)) {
       return null;
     }
-    savedData.dataByLevels = stat;
-    savedData.dataByTeam = stat;
-    savedData.finishResults = stat;
+    savedData.dataByLevels = groupStatBy(stat, 'levelIdx');
+    savedData.dataByTeam = groupStatBy(stat, 'id');
+    savedData.finishResults = filterFinishStat(R.equals, stat);
     return savedData;
   })
   .catch((error) => {
