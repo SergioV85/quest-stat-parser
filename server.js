@@ -31,8 +31,8 @@ const corsOptions = {
 // app.use(allowCrossDomain);
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-
-app.post('/games/', (req, res) => {
+app.options('*', cors());
+app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
 
@@ -72,14 +72,4 @@ app.post('/games/', (req, res) => {
       res.status(500).send(error);
     });
 });
-
-app.options('*', cors());
-app.post('/v1/carHireSegments', cors(corsOptions), (req, res) => {
-  res.status(500).send({ message: 'success' });
-});
-
-app.post('/v1/carHireNudgeMessageSegments', cors(corsOptions), (req, res) => {
-  res.status(500).send({ message: 'success' });
-});
-
 app.listen(process.env.PORT || 4040);
