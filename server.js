@@ -65,7 +65,7 @@ app.post('/games/', (req, res) => {
     });
 });
 
-app.post('/segapi/v1/carHireSegments', (req, res) => {
+app.post('v1/carHireSegments', (req, res) => {
   res.status(200).send({ message: 'success' });
 });
 
