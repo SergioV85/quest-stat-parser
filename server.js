@@ -65,11 +65,11 @@ app.post('/games/', (req, res) => {
     });
 });
 
-app.post('v1/carHireSegments', (req, res) => {
+app.post('/v1/carHireSegments', (req, res) => {
   res.status(200).send({ message: 'success' });
 });
 
-app.post('v1/carHireNudgeMessageSegments', (req, res) => {
+app.post('/v1/carHireNudgeMessageSegments', (req, res) => {
   res.status(200).send({ message: 'success' });
 });
 
