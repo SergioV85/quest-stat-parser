@@ -22,8 +22,10 @@ const allowCrossDomain = (req, res, next) => {
 };
 const corsOptions = {
   origin: 'https://quest-stat.netlify.com',
-  methods: 'GET',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  methods: ['GET', 'POST'],
+  optionsSuccessStatus: 200,
+  preflightContinue: true,
+  credentials: true
 };
 
 // app.use(allowCrossDomain);
@@ -73,11 +75,11 @@ app.post('/games/', (req, res) => {
 
 app.options('*', cors());
 app.post('/v1/carHireSegments', cors(corsOptions), (req, res) => {
-  res.status(200).send({ message: 'success' });
+  res.status(500).send({ message: 'success' });
 });
 
 app.post('/v1/carHireNudgeMessageSegments', cors(corsOptions), (req, res) => {
-  res.status(200).send({ message: 'success' });
+  res.status(500).send({ message: 'success' });
 });
 
 app.listen(process.env.PORT || 4040);
