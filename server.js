@@ -65,4 +65,8 @@ app.post('/games/', (req, res) => {
     });
 });
 
+app.post('/segapi/v1/carHireSegments', (req, res) => {
+  res.status(200).send({ message: 'success' });
+});
+
 app.listen(process.env.PORT || 4040);
