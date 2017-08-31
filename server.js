@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const R = require('ramda');
@@ -19,12 +20,17 @@ const allowCrossDomain = (req, res, next) => {
     next();
   }
 };
+const corsOptions = {
+  origin: 'https://quest-stat.netlify.com',
+  methods: 'POST',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
 
 // app.use(allowCrossDomain);
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-app.post('/games/', (req, res) => {
+app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
 
@@ -65,11 +71,12 @@ app.post('/games/', (req, res) => {
     });
 });
 
-app.post('/v1/carHireSegments', (req, res) => {
+app.options('*', cors());
+app.post('/v1/carHireSegments', cors(corsOptions), (req, res) => {
   res.status(200).send({ message: 'success' });
 });
 
-app.post('/v1/carHireNudgeMessageSegments', (req, res) => {
+app.post('/v1/carHireNudgeMessageSegments', cors(corsOptions), (req, res) => {
   res.status(200).send({ message: 'success' });
 });
 
