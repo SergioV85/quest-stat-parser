@@ -22,7 +22,7 @@ const allowCrossDomain = (req, res, next) => {
 };
 const corsOptions = {
   origin: 'https://quest-stat.netlify.com',
-  methods: 'POST',
+  methods: 'GET',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
@@ -30,7 +30,7 @@ const corsOptions = {
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-app.post('/games/', cors(corsOptions), (req, res) => {
+app.post('/games/', (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
 
