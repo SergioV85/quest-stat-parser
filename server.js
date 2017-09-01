@@ -21,7 +21,7 @@ const allowCrossDomain = (req, res, next) => {
   }
 };
 const corsOptions = {
-  origin: 'https://quest-stat.netlify.com',
+  origin: 'https://quest-top-stat.netlify.com',
   methods: ['GET', 'POST'],
   optionsSuccessStatus: 200,
   preflightContinue: true,
