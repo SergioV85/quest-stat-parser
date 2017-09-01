@@ -8,20 +8,8 @@ const dbConnection = require('./modules/database-connection.js');
 
 const app = express();
 
-const allowCrossDomain = (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-
-  // intercept OPTIONS method
-  if (req.method === 'OPTIONS') {
-    res.send(200);
-  } else {
-    next();
-  }
-};
 const corsOptions = {
-  origin: 'https://quest-top-stat.netlify.com',
+  origin: 'https://quest-stat.netlify.com',
   methods: ['GET', 'POST'],
   optionsSuccessStatus: 200,
   preflightContinue: true,
@@ -31,7 +19,7 @@ const corsOptions = {
 // app.use(allowCrossDomain);
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
