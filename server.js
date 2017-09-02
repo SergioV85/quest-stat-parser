@@ -7,9 +7,16 @@ const htmlParser = require('./modules/html-parser.js');
 const dbConnection = require('./modules/database-connection.js');
 
 const app = express();
+const allowedUrls = [new RegExp('quest-stat'), new RegExp('localhost')];
 
 const corsOptions = {
-  origin: 'https://quest-stat.netlify.com',
+  origin: (origin, callback) => {
+    if (R.any((allowedUrl) => R.test(allowedUrl, origin))(allowedUrls)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST'],
   optionsSuccessStatus: 200,
   preflightContinue: true,
