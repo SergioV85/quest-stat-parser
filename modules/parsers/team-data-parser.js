@@ -38,6 +38,12 @@ const getBonusesPenaltiesTime = (levelArray) => {
   return undefined;
 };
 
+const getTimeoutStatus = R.pipe(
+  he.decode,
+  R.match(/timeout/g),
+  R.isEmpty,
+  R.not);
+
 const getTeamId = R.pipe(
   R.match(/tid=\d*/g),
   R.head,
@@ -71,7 +77,8 @@ const convertStringToObject = (levelIdx, gameData, rawString) => ({
   levelIdx,
   name: getTeamName(rawString),
   levelTime: getLevelTime(rawString, gameData),
-  additionsTime: getBonusPenaltyTime(rawString)
+  additionsTime: getBonusPenaltyTime(rawString),
+  timeout: getTimeoutStatus(rawString),
 });
 
 const assignIndexToLevelData = (idx, gameData, lvl) => R.pipe(
@@ -104,7 +111,7 @@ const highlightBestResult = (levelStat) => {
   const byDuration = R.ascend(R.prop('duration'));
   const bestTeam = R.head(R.sort(byDuration, levelStat));
   return R.map((team) => R.merge(team, {
-    bestTime: team.id === bestTeam.id
+    bestTime: (team.id === bestTeam.id) && !team.timeout
   }), levelStat);
 };
 

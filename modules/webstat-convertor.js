@@ -2,9 +2,9 @@ const request = require('request-promise');
 const cheerio = require('cheerio');
 const cheerioTableparser = require('cheerio-tableparser');
 const R = require('ramda');
-const gameInfoParser = require('./game-info-parser.js');
-const levelNameParser = require('./level-name-parser.js');
-const teamDataParser = require('./team-data-parser.js');
+const gameInfoParser = require('./parsers/game-info-parser.js');
+const levelNameParser = require('./parsers/level-name-parser.js');
+const teamDataParser = require('./parsers/team-data-parser.js');
 
 const removeObsoleteData = (rawData) => R.slice(1, -1, rawData);
 
