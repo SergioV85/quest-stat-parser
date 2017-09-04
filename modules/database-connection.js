@@ -16,7 +16,7 @@ const dbRequest = (preparedRequest) => db.manyOrNone(preparedRequest);
 const saveLevelsToDatabase = (gameInfo, levels) => {
   const cs = new pgp.helpers.ColumnSet(
     [
-      {name: 'id', init: a => getLevelId(gameInfo, a.position)},
+      {name: 'id', init: a => getLevelId(gameInfo, a.source.position)},
       {name: 'game_id', init: () => gameInfo.id},
       'level', 'name', 'position', 'removed', 'type'
     ], {
