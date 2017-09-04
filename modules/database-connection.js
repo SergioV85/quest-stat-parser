@@ -6,8 +6,8 @@ const pgp = require('pg-promise')({
   capSQL: true
 });
 
-const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
-// const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
+// const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
+const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
 
 const getLevelId = (gameInfo, levelIndex) => ((gameInfo.id + (levelIndex / 1000)) * 1000);
 
@@ -16,8 +16,8 @@ const dbRequest = (preparedRequest) => db.manyOrNone(preparedRequest);
 const saveLevelsToDatabase = (gameInfo, levels) => {
   const cs = new pgp.helpers.ColumnSet(
     [
-      {name: 'id', init: a => getLevelId(gameInfo, a.source.position)},
-      {name: 'game_id', init: () => gameInfo.id},
+      { name: 'id', init: a => getLevelId(gameInfo, a.source.position) },
+      { name: 'game_id', init: () => gameInfo.id },
       'level', 'name', 'position', 'removed', 'type'
     ], {
       table: {
@@ -60,7 +60,7 @@ const saveTeamsToDatabase = (dataByTeam) => {
 
 const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
   const cs = new pgp.helpers.ColumnSet(
-    ['addition_time', 'id', 'game_id',
+    ['addition_time', 'id', 'game_id', 'extra_bonus',
       'level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name', 'timeout'],
     {
       table: {
@@ -76,6 +76,7 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
     const dbObject = {
       addition_time: levelStat.additionsTime,
       id: `${levelId}_${levelStat.id}`,
+      extra_bonus: levelStat.extraBonus,
       game_id: gameInfo.id,
       level_id: levelId,
       team_id: levelStat.id,
@@ -111,6 +112,7 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
 const converDbStat = (stat) => ({
   bestTime: stat.best_time,
   duration: stat.duration,
+  extraBonus: stat.extra_bonus,
   id: stat.team_id,
   levelIdx: stat.level_idx,
   levelTime: stat.level_time,
@@ -157,11 +159,11 @@ const getLevelsFromDatabase = (gameId) => {
 
 const getTeamStatFromDatabase = (gameId) => {
   const statRequest = ['addition_time', 'level_id', 'team_id', 'best_time',
-    'duration', 'level_idx', 'level_time', 'team_name', 'timeout'];
+    'duration', 'level_idx', 'level_time', 'team_name', 'timeout', 'extra_bonus'];
 
   return dbRequest({
     name: 'get-stat',
-    text: `SELECT ${statRequest} FROM quest.stat WHERE game_id = $1`,
+    text: `SELECT ${statRequest} FROM quest.stat WHERE game_id = $1 ORDER BY level_idx ASC, level_time ASC`,
     values: [gameId]
   })
   .then((stat) => {

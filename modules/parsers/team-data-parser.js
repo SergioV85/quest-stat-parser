@@ -107,6 +107,19 @@ const calculateGameDuration = (gameData, level) => R.merge(level, {
   duration: moment(level.levelTime).diff(moment(gameData.start))
 });
 
+const calculateExtraBonus = (fullStat, level) => {
+  const teamGameBonus = R.pipe(
+    R.find(R.propEq('id', level.id)),
+    R.prop('data'),
+    R.map(R.pathOr(0, ['additionsTime'])),
+    R.sum
+  )(fullStat);
+
+  return R.merge(level, {
+    extraBonus: R.subtract(level.additionsTime, teamGameBonus)
+  });
+};
+
 const highlightBestResult = (levelStat) => {
   const byDuration = R.ascend(R.prop('duration'));
   const bestTeam = R.head(R.sort(byDuration, levelStat));
@@ -142,11 +155,12 @@ exports.getStatByLevel = R.pipe(
   groupByLevel,
   R.mapObjIndexed(convertObjToArr),
   R.values);
-exports.getFinishResults = (stat, gameData) => R.pipe(
+exports.getFinishResults = (stat, gameData, dataByTeam) => R.pipe(
   R.map(R.slice(1, -1)),
   R.filter(R.test(/wrapper/g)),
   R.head,
   R.flatten,
   R.map(R.curry(convertStringToObject)(null, gameData)),
-  R.map(R.curry(calculateGameDuration)(gameData))
+  R.map(R.curry(calculateGameDuration)(gameData)),
+  R.map(R.curry(calculateExtraBonus)(dataByTeam))
 )(stat);

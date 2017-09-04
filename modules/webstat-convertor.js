@@ -41,7 +41,7 @@ const parseGameStat = (data, gameInfo) => {
     throw err;
   }
   try {
-    finishResults = teamDataParser.getFinishResults(statOnly, gameInfo);
+    finishResults = teamDataParser.getFinishResults(statOnly, gameInfo, dataByTeam);
   } catch (err) {
     throw err;
   }
