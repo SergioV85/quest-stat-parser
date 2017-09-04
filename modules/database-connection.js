@@ -15,18 +15,17 @@ const dbRequest = (preparedRequest) => db.manyOrNone(preparedRequest);
 
 const saveLevelsToDatabase = (gameInfo, levels) => {
   const cs = new pgp.helpers.ColumnSet(
-    ['id', 'game_id', 'level', 'name', 'position', 'removed', 'type'], {
+    [
+      {name: 'id', init: a => getLevelId(gameInfo, a.position)},
+      {name: 'game_id', init: () => gameInfo.id},
+      'level', 'name', 'position', 'removed', 'type'
+    ], {
       table: {
         table: 'levels',
         schema: 'quest'
       }
     });
-  const values = R.map((level) => R.merge(level, {
-    id: getLevelId(gameInfo, level.position),
-    game_id: gameInfo.id
-  }), levels);
-
-  const query = pgp.helpers.insert(values, cs);
+  const query = pgp.helpers.insert(levels, cs);
   return db.none(query);
 };
 
