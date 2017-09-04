@@ -107,7 +107,7 @@ const calculateGameDuration = (gameData, level) => R.merge(level, {
   duration: moment(level.levelTime).diff(moment(gameData.start))
 });
 
-const calculateExtraBonus = (fullStat, level) => {
+const calculateExtraData = (fullStat, level) => {
   const teamGameBonus = R.pipe(
     R.find(R.propEq('id', level.id)),
     R.prop('data'),
@@ -115,8 +115,15 @@ const calculateExtraBonus = (fullStat, level) => {
     R.sum
   )(fullStat);
 
+  const closedLevels = R.pipe(
+    R.find(R.propEq('id', level.id)),
+    R.prop('data'),
+    R.length
+  )(fullStat);
+
   return R.merge(level, {
-    extraBonus: R.subtract(level.additionsTime, teamGameBonus)
+    extraBonus: R.subtract(level.additionsTime, teamGameBonus),
+    closedLevels
   });
 };
 
@@ -162,5 +169,5 @@ exports.getFinishResults = (stat, gameData, dataByTeam) => R.pipe(
   R.flatten,
   R.map(R.curry(convertStringToObject)(null, gameData)),
   R.map(R.curry(calculateGameDuration)(gameData)),
-  R.map(R.curry(calculateExtraBonus)(dataByTeam))
+  R.map(R.curry(calculateExtraData)(dataByTeam))
 )(stat);

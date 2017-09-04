@@ -6,8 +6,8 @@ const pgp = require('pg-promise')({
   capSQL: true
 });
 
-// const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
-const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
+const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
+// const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
 
 const getLevelId = (gameInfo, levelIndex) => ((gameInfo.id + (levelIndex / 1000)) * 1000);
 
@@ -58,10 +58,10 @@ const saveTeamsToDatabase = (dataByTeam) => {
   return db.none(query);
 };
 
-const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
+const saveLevelStatToDatabase = (gameInfo, dataByLevels) => {
   const cs = new pgp.helpers.ColumnSet(
-    ['addition_time', 'id', 'game_id', 'extra_bonus',
-      'level_id', 'team_id', 'best_time', 'duration', 'level_idx', 'level_time', 'team_name', 'timeout'],
+    ['addition_time', 'id', 'game_id', 'level_id', 'team_id', 'best_time', 'duration', 'level_idx',
+      'level_time', 'team_name', 'timeout'],
     {
       table: {
         table: 'stat',
@@ -76,7 +76,6 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
     const dbObject = {
       addition_time: levelStat.additionsTime,
       id: `${levelId}_${levelStat.id}`,
-      extra_bonus: levelStat.extraBonus,
       game_id: gameInfo.id,
       level_id: levelId,
       team_id: levelStat.id,
@@ -93,7 +92,6 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
 
   const values = R.pipe(
     R.map(R.prop('data')),
-    R.append(finishResults),
     R.flatten,
     R.map(convertLevelToDb)
   )(dataByLevels);
@@ -106,11 +104,60 @@ const saveLevelStatToDatabase = (gameInfo, dataByLevels, finishResults) => {
     .join();
 
   const query = `${pgp.helpers.insert(values, cs)} ON CONFLICT (id) DO UPDATE SET ${conflictSet}`;
+
   return db.none(query);
 };
 
-const converDbStat = (stat) => ({
+const saveFinishStatToDatabase = (gameInfo, levels, finishResults) => {
+  const levelIdx = R.last(levels).position;
+
+  const cs = new pgp.helpers.ColumnSet(
+    ['addition_time', 'id', 'game_id', 'extra_bonus',
+      'level_id', 'team_id', 'duration', 'level_idx', 'level_time', 'team_name', 'closed_levels'],
+    {
+      table: {
+        table: 'total',
+        schema: 'quest'
+      }
+    });
+
+  const convertLevelToDb = (levelStat) => {
+    const levelId = getLevelId(gameInfo, levelIdx);
+
+    const dbObject = {
+      addition_time: levelStat.additionsTime,
+      closed_levels: levelStat.closedLevels,
+      id: `${levelId}_${levelStat.id}`,
+      extra_bonus: levelStat.extraBonus,
+      game_id: gameInfo.id,
+      level_id: levelId,
+      team_id: levelStat.id,
+      duration: levelStat.duration,
+      level_idx: levelIdx,
+      level_time: levelStat.levelTime,
+      team_name: levelStat.name
+    };
+
+    return dbObject;
+  };
+
+  const values = R.map(convertLevelToDb)(finishResults);
+
+  const conflictSet = cs.columns
+    .map((x) => {
+      const col = pgp.as.name(x.name);
+      return `${col} = EXCLUDED.${col}`;
+    })
+    .join();
+
+  const query = `${pgp.helpers.insert(values, cs)} ON CONFLICT (id) DO UPDATE SET ${conflictSet}`;
+
+  return db.none(query);
+};
+
+const convertDbStat = (stat) => ({
   bestTime: stat.best_time,
+  closedLevels: stat.closed_levels,
   duration: stat.duration,
   extraBonus: stat.extra_bonus,
   id: stat.team_id,
@@ -126,22 +173,8 @@ const convertObjToArr = (data, id) => ({
   data
 });
 
-const getlastLevelIdx = R.pipe(
-  R.map((level) => level.level_idx),
-  R.sort((a, b) => a - b),
-  R.last);
-
-const filterFinishStat = (comparsionFunction, stat) => {
-  const lastLevelIdx = getlastLevelIdx(stat);
-
-  return R.pipe(
-    R.filter((level) => comparsionFunction(level.level_idx, lastLevelIdx)),
-    R.map(converDbStat)
-  )(stat);
-};
-
 const groupStatBy = (stat, fieldName) => R.pipe(
-  R.curry(filterFinishStat)(R.complement(R.equals)),
+  R.map(convertDbStat),
   R.groupBy((level) => level[fieldName]),
   R.mapObjIndexed(convertObjToArr),
   R.values
@@ -157,30 +190,6 @@ const getLevelsFromDatabase = (gameId) => {
   });
 };
 
-const getTeamStatFromDatabase = (gameId) => {
-  const statRequest = ['addition_time', 'level_id', 'team_id', 'best_time',
-    'duration', 'level_idx', 'level_time', 'team_name', 'timeout', 'extra_bonus'];
-
-  return dbRequest({
-    name: 'get-stat',
-    text: `SELECT ${statRequest} FROM quest.stat WHERE game_id = $1 ORDER BY level_idx ASC, level_time ASC`,
-    values: [gameId]
-  })
-  .then((stat) => {
-    if (R.isNil(stat) || R.isEmpty(stat)) {
-      return null;
-    }
-    const dataByLevels = groupStatBy(stat, 'levelIdx');
-    const dataByTeam = groupStatBy(stat, 'id');
-    const finishResults = filterFinishStat(R.equals, stat);
-    return {
-      dataByLevels,
-      dataByTeam,
-      finishResults
-    };
-  });
-};
-
 exports.getGameInfoFromDatabase = (gameId) => dbRequest({
   name: 'get-game',
   text: 'SELECT id, domain, name, start, timezone FROM quest.games WHERE id = $1',
@@ -191,26 +200,47 @@ exports.getLevelFromDatabase = (gameId) => getLevelsFromDatabase(gameId);
 
 exports.getFullStatFromDatabase = (gameId) => {
   let levelsFromDb;
+  let teamStats;
 
-  return getLevelsFromDatabase(gameId)
-    .then((levels) => {
-      if (R.isNil(levels) || R.isEmpty(levels)) {
-        return null;
-      }
-      levelsFromDb = levels;
-      return getTeamStatFromDatabase(gameId);
-    })
-    .then((teamStat) => {
-      if (R.isNil(teamStat) || R.isEmpty(teamStat)) {
-        return null;
-      }
-      return R.merge(teamStat, {
-        levels: levelsFromDb
+  return db.task((task) => {
+    const levelRequest = ['id', 'name', 'level', 'position', 'type', 'removed'];
+    return task.manyOrNone(`SELECT ${levelRequest} FROM quest.levels WHERE game_id = $1 ORDER BY position`, gameId)
+      .then((levels) => {
+        if (R.isNil(levels) || R.isEmpty(levels)) {
+          return null;
+        }
+        levelsFromDb = levels;
+        const teamStatRequest = ['addition_time', 'level_id', 'team_id', 'best_time',
+          'duration', 'level_idx', 'level_time', 'team_name', 'timeout'];
+        return task.manyOrNone(`SELECT ${teamStatRequest} 
+          FROM quest.stat WHERE game_id = $1 ORDER BY level_idx ASC, level_time ASC`, gameId);
+      })
+      .then((teamStat) => {
+        if (R.isNil(teamStat) || R.isEmpty(teamStat)) {
+          return null;
+        }
+        teamStats = {
+          dataByLevels: groupStatBy(teamStat, 'levelIdx'),
+          dataByTeam: groupStatBy(teamStat, 'id')
+        };
+        const finishStatRequest = ['addition_time', 'level_id', 'team_id', 'duration', 'level_idx', 'level_time',
+          'team_name', 'extra_bonus', 'closed_levels'];
+        return task.manyOrNone(`SELECT ${finishStatRequest} 
+          FROM quest.total WHERE game_id = $1 ORDER BY closed_levels ASC, level_time ASC`, gameId);
+      })
+      .then((results) => {
+        if (R.isNil(results) || R.isEmpty(results)) {
+          return null;
+        }
+        return R.merge(teamStats, {
+          levels: levelsFromDb,
+          finishResults: R.map(convertDbStat, results)
+        });
       });
-    })
-    .catch((error) => {
-      throw error;
-    });
+  })
+  .catch((error) => {
+    throw error;
+  });
 };
 
 exports.saveGameInfoToDatabase = ({ id, name, domain, start, timezone }) => db
@@ -227,7 +257,8 @@ exports.saveGameInfoToDatabase = ({ id, name, domain, start, timezone }) => db
 exports.saveGameDataToDatabase = (gameInfo, { levels, dataByTeam, dataByLevels, finishResults }) =>
   saveLevelsToDatabase(gameInfo, levels)
     .then(() => saveTeamsToDatabase(dataByTeam))
-    .then(() => saveLevelStatToDatabase(gameInfo, dataByLevels, finishResults))
+    .then(() => saveLevelStatToDatabase(gameInfo, dataByLevels))
+    .then(() => saveFinishStatToDatabase(gameInfo, levels, finishResults))
     .catch((err) => {
       throw err;
     });
