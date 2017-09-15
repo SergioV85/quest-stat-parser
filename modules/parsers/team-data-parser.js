@@ -122,7 +122,7 @@ const calculateExtraData = (fullStat, level) => {
   )(fullStat);
 
   return R.merge(level, {
-    extraBonus: R.subtract(level.additionsTime, teamGameBonus),
+    extraBonus: level.additionsTime ? R.subtract(level.additionsTime, teamGameBonus) : 0,
     closedLevels
   });
 };
