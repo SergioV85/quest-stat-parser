@@ -25,6 +25,15 @@ const corsOptions = {
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 app.options('*', cors(corsOptions));
+app.get('/games', cors(corsOptions), (req, res) => {
+  gameManagement.getSavedGames()
+    .then((games) => {
+      res.send(games);
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+});
 app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);

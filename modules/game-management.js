@@ -2,6 +2,8 @@ const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
 
+exports.getSavedGames = () => dbConnection.getAllSavedGames();
+
 exports.getGameData = ({ gameId, domain }) => {
   const gameData = {
     info: null,

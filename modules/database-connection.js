@@ -190,6 +190,11 @@ const getLevelsFromDatabase = (gameId) => {
   });
 };
 
+exports.getAllSavedGames = () => dbRequest({
+  name: 'get-games',
+  text: 'SELECT id, domain, name, start, timezone FROM quest.games ORDER BY start DESC'
+});
+
 exports.getGameInfoFromDatabase = (gameId) => dbRequest({
   name: 'get-game',
   text: 'SELECT id, domain, name, start, timezone FROM quest.games WHERE id = $1',
@@ -265,7 +270,7 @@ exports.saveGameDataToDatabase = (gameInfo, { levels, dataByTeam, dataByLevels, 
 
 exports.updateLevelsInDatabase = (gameId, levels) => {
   const cs = new pgp.helpers.ColumnSet(
-    ['?id', 'name', 'removed', 'type'], {
+    ['?id', 'name', 'type'], {
       table: {
         table: 'levels',
         schema: 'quest'
