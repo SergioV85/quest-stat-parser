@@ -25,7 +25,18 @@ const saveLevelsToDatabase = (gameInfo, levels) => {
         schema: 'quest'
       }
     });
-  const query = pgp.helpers.insert(levels, cs);
+
+
+  const conflictSet = cs.columns
+    .map((x) => {
+      const col = pgp.as.name(x.name);
+      if (col === '"type"') {
+        return `${col} = quest.levels.${col}`;
+      }
+      return `${col} = EXCLUDED.${col}`;
+    })
+    .join();
+  const query = `${pgp.helpers.insert(levels, cs)} ON CONFLICT (id) DO UPDATE SET ${conflictSet}`;
   return db.none(query);
 };
 
@@ -197,7 +208,7 @@ exports.getAllSavedGames = () => dbRequest({
 
 exports.getGameInfoFromDatabase = (gameId) => dbRequest({
   name: 'get-game',
-  text: 'SELECT id, domain, name, start, timezone FROM quest.games WHERE id = $1',
+  text: 'SELECT id, domain, name, start, finish, timezone FROM quest.games WHERE id = $1',
   values: [gameId]
 });
 
@@ -248,13 +259,13 @@ exports.getFullStatFromDatabase = (gameId) => {
   });
 };
 
-exports.saveGameInfoToDatabase = ({ id, name, domain, start, timezone }) => db
+exports.saveGameInfoToDatabase = ({ id, name, domain, start, finish, timezone }) => db
   .none(`INSERT 
     INTO quest.games 
-    (id, domain, name, start, timezone) 
+    (id, domain, name, start, finish, timezone) 
     VALUES
-    (${id}, '${domain}', '${name}', '${start}', '${timezone}')`)
-  .then(() => ({ id, name, domain, start, timezone }))
+    (${id}, '${domain}', '${name}', '${start}', '${finish}', '${timezone}')`)
+  .then(() => ({ id, name, domain, start, finish, timezone }))
   .catch((error) => {
     throw error;
   });
