@@ -1,4 +1,5 @@
 const R = require('ramda');
+const moment = require('moment');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
 
@@ -19,7 +20,10 @@ exports.getGameData = ({ gameId, domain }) => {
     })
     .then((data) => {
       gameData.info = data;
-      return dbConnection.getFullStatFromDatabase(gameId);
+      if (moment().isAfter(data.finish)) {
+        return dbConnection.getFullStatFromDatabase(gameId);
+      }
+      return null;
     })
     .then((stat) => {
       if (R.isNil(stat) || R.isEmpty(stat)) {

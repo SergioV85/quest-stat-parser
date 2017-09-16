@@ -36,10 +36,22 @@ const getGameInfo = (row) => {
     R.last
   )(row);
 
-  const stringWithTimeZone = `${start}${timezone}`;
+  const finish = R.pipe(
+    R.find(R.test(/Время окончания/)),
+    R.replace(/<.*?>/g, ''),
+    R.split(' '),
+    R.take(3),
+    R.join(' '),
+    R.split(/\t/g),
+    R.last
+  )(row);
+
+  const startStringWithTimeZone = `${start}${timezone}`;
+  const finishStringWithTimeZone = `${finish}${timezone}`;
 
   return {
-    start: timeParser.convertTime(stringWithTimeZone),
+    start: timeParser.convertTime(startStringWithTimeZone),
+    finish: timeParser.convertTime(finishStringWithTimeZone),
     timezone,
     name
   };
