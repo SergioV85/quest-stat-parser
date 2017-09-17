@@ -1,5 +1,6 @@
 
 const R = require('ramda');
+const moment = require('moment');
 const Promise = require('bluebird');
 const pgp = require('pg-promise')({
   promiseLib: Promise,
@@ -201,6 +202,22 @@ const getLevelsFromDatabase = (gameId) => {
   });
 };
 
+const updateGameTimestamp = ({ id }) => {
+  const cs = new pgp.helpers.ColumnSet(
+    ['last_updated'], {
+      table: {
+        table: 'games',
+        schema: 'quest'
+      }
+    });
+  const value = {
+    last_updated: moment().format()
+  };
+
+  const query = `${pgp.helpers.update(value, cs)} WHERE id = ${id}`;
+  return db.none(query);
+};
+
 exports.getAllSavedGames = () => dbRequest({
   name: 'get-games',
   text: 'SELECT id, domain, name, start, timezone FROM quest.games ORDER BY start DESC'
@@ -208,7 +225,7 @@ exports.getAllSavedGames = () => dbRequest({
 
 exports.getGameInfoFromDatabase = (gameId) => dbRequest({
   name: 'get-game',
-  text: 'SELECT id, domain, name, start, finish, timezone FROM quest.games WHERE id = $1',
+  text: 'SELECT id, domain, name, start, finish, last_updated, timezone FROM quest.games WHERE id = $1',
   values: [gameId]
 });
 
@@ -275,6 +292,7 @@ exports.saveGameDataToDatabase = (gameInfo, { levels, dataByTeam, dataByLevels, 
     .then(() => saveTeamsToDatabase(dataByTeam))
     .then(() => saveLevelStatToDatabase(gameInfo, dataByLevels))
     .then(() => saveFinishStatToDatabase(gameInfo, levels, finishResults))
+    .then(() => updateGameTimestamp(gameInfo))
     .catch((err) => {
       throw err;
     });

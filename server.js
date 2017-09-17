@@ -37,11 +37,12 @@ app.get('/games', cors(corsOptions), (req, res) => {
 app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
+  const isForceRefresh = R.pathOr(false, ['body', 'force'], req);
 
   if (R.isNil(gameId) || R.isNil(domain)) {
     res.status(400).send('Bad Request');
   }
-  gameManagement.getGameData({ gameId, domain })
+  gameManagement.getGameData({ gameId, domain, isForceRefresh })
     .then((gameData) => {
       res.send(gameData);
     })

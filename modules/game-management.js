@@ -5,7 +5,7 @@ const dbConnection = require('./database-connection.js');
 
 exports.getSavedGames = () => dbConnection.getAllSavedGames();
 
-exports.getGameData = ({ gameId, domain }) => {
+exports.getGameData = ({ gameId, domain, isForceRefresh }) => {
   const gameData = {
     info: null,
     stat: null
@@ -20,7 +20,7 @@ exports.getGameData = ({ gameId, domain }) => {
     })
     .then((data) => {
       gameData.info = data;
-      if (moment().isAfter(data.finish)) {
+      if (!isForceRefresh && !R.isNil(data.last_updated) && moment(data.last_updated).isAfter(data.finish)) {
         return dbConnection.getFullStatFromDatabase(gameId);
       }
       return null;
