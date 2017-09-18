@@ -8,15 +8,18 @@ const teamDataParser = require('./parsers/team-data-parser.js');
 
 const removeObsoleteData = (rawData) => R.slice(1, -1, rawData);
 
-const parseGameInfo = (data) => {
-  const $ = cheerio.load(data);
+const pageRequest = (uri) => request({
+  uri,
+  transform: (body) => cheerio.load(body)
+});
+
+const parseGameInfo = ($) => {
   cheerioTableparser($);
   const parsedData = $('.gameInfo').parsetable(true, true, false);
   return gameInfoParser.getGameInfo(parsedData);
 };
 
-const parseGameStat = (data, gameInfo) => {
-  const $ = cheerio.load(data);
+const parseGameStat = ($, gameInfo) => {
   cheerioTableparser($);
   const parsedData = $('.DataTable').parsetable(true, true, false);
   const statOnly = removeObsoleteData(parsedData);
@@ -53,11 +56,11 @@ const parseGameStat = (data, gameInfo) => {
   };
 };
 
-exports.getGameInfo = (domain, gameId) => request(`http://${domain}/GameDetails.aspx?gid=${gameId}`)
+exports.getGameInfo = (domain, gameId) => pageRequest(`http://${domain}/GameDetails.aspx?gid=${gameId}`)
   .then((gameInfoHtml) => R.merge(parseGameInfo(gameInfoHtml), {
     id: gameId,
     domain
   }));
 
-exports.getGameStat = (domain, gameId, gameInfo) => request(`http://${domain}/GameStat.aspx?gid=${gameId}`)
+exports.getGameStat = (domain, gameId, gameInfo) => pageRequest(`http://${domain}/GameStat.aspx?gid=${gameId}`)
   .then((gameStatHtml) => parseGameStat(gameStatHtml, gameInfo));
