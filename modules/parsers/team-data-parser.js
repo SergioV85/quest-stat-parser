@@ -91,16 +91,23 @@ const getTeamData = (gameData, team, idx) => R.pipe(
   R.curry(assignIndexToLevelData)(idx, gameData)
 )(team);
 
-const calculateLeveDuration = (gameData, level, idx, list) => {
-  const matchTeamId = R.propEq('id', level.id);
+const calculateSingleLevelDuration = (gameData, level, list) => {
   const matchPrevLevelIdx = R.propEq('levelIdx', R.subtract(level.levelIdx, 1));
-  const matchConditions = R.allPass([matchTeamId, matchPrevLevelIdx]);
-  const prevLevel = R.find(matchConditions)(list);
+  const prevLevel = R.find(matchPrevLevelIdx)(list[level.id]);
   const prevLevelTime = R.isNil(prevLevel) ? gameData.start : prevLevel.levelTime;
 
   return R.merge(level, {
     duration: moment(level.levelTime).diff(moment(prevLevelTime))
   });
+};
+
+const calculateLevelsDuration = (gameData, list) => {
+  const sortedList = R.pipe(
+    R.sortBy(R.prop('levelIdx')),
+    R.groupBy(R.prop('id'))
+  )(list);
+
+  return R.map((level) => calculateSingleLevelDuration(gameData, level, sortedList), list);
 };
 
 const calculateGameDuration = (gameData, level) => R.merge(level, {
@@ -147,7 +154,7 @@ const convertObjToArr = (data, id) => ({
 exports.getStat = (stat, gameData) => R.pipe(
   R.addIndex(R.map)(R.curry(getTeamData)(gameData)),
   R.flatten,
-  R.addIndex(R.map)(R.curry(calculateLeveDuration)(gameData))
+  R.curry(calculateLevelsDuration)(gameData)
 )(stat);
 
 exports.getStatByTeam = R.pipe(
