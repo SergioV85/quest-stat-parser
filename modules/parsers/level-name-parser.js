@@ -16,8 +16,16 @@ const checkLevelType = (string) => {
   return 0;
 };
 
+const checkLevelName = (string) => {
+  const parsedLevelNumber = parseInt(string, 10);
+  return isNaN(parsedLevelNumber) ? string : parsedLevelNumber;
+};
+
 const convertNameStringToObject = (index, strArray) => ({
-  level: R.head(strArray),
+  level: R.pipe(
+    R.head,
+    checkLevelName
+  )(strArray),
   name: R.pipe(
     R.tail,
     R.join(' '),
