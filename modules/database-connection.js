@@ -192,6 +192,13 @@ const groupStatBy = (stat, fieldName) => R.pipe(
   R.values
 )(stat);
 
+const groupStatByRow = (stat, fieldName) => R.pipe(
+  R.map(convertDbStat),
+  R.groupBy((level) => level[fieldName]),
+  R.values,
+  R.transpose
+)(stat);
+
 const getLevelsFromDatabase = (gameId) => {
   const levelRequest = ['id', 'name', 'level', 'position', 'type', 'removed'];
 
@@ -254,6 +261,7 @@ exports.getFullStatFromDatabase = (gameId) => {
         }
         teamStats = {
           dataByLevels: groupStatBy(teamStat, 'levelIdx'),
+          dataByLevelsRow: groupStatByRow(teamStat, 'levelIdx'),
           dataByTeam: groupStatBy(teamStat, 'id')
         };
         const finishStatRequest = ['addition_time', 'level_id', 'team_id', 'duration', 'level_idx', 'level_time',
