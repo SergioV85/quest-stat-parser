@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const R = require('ramda');
+// TODO: Remove next line after configuring unit tests
+const webstatConvertor = require('./modules/webstat-convertor.js');
 const gameManagement = require('./modules/game-management');
 
 const app = express();
@@ -25,6 +27,15 @@ const corsOptions = {
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 app.options('*', cors(corsOptions));
+// TODO: Remove next route after configuring unit tests
+app.get('/rawGames/:gameId', (req, res) => {
+  const gameId = R.path(['params', 'gameId'], req);
+  const domain = 'quest.ua';
+  webstatConvertor.getGameInfo(domain, gameId)
+    .then((data) => {
+      res.send(data);
+    });
+});
 app.get('/games', cors(corsOptions), (req, res) => {
   gameManagement.getSavedGames()
     .then((games) => {

@@ -4,7 +4,8 @@
   "description": "A server statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/",
+    "test:coverage": "nyc --reporter=html --reporter=text mocha test/",
     "start:server": "http-server"
   },
   "author": "Serhii Vozniak",
@@ -29,8 +30,11 @@
     "xtend": "^4.0.1"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
     "eslint": "^3.1.1",
     "eslint-config-airbnb-base": "^5.0.0",
-    "eslint-plugin-import": "^1.12.0"
+    "eslint-plugin-import": "^1.12.0",
+    "mocha": "^4.0.1",
+    "nyc": "^11.2.1"
   }
 }
