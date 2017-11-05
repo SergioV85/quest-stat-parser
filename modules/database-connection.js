@@ -7,8 +7,7 @@ const pgp = require('pg-promise')({
   capSQL: true
 });
 
-const db = pgp(`${process.env.HEROKU_POSTGRESQL_AQUA_URL}?ssl=true`);
-// const db = pgp(`${process.env.DATABASE_URL}?ssl=true`);
+const db = pgp(`${process.env.AMAZON_DB_URL}?ssl=true`);
 
 const getLevelId = (gameInfo, levelIndex) => ((gameInfo.id + (levelIndex / 1000)) * 1000);
 
