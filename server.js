@@ -8,7 +8,7 @@ const webstatConvertor = require('./modules/webstat-convertor.js');
 const gameManagement = require('./modules/game-management');
 
 const app = express();
-const allowedUrls = [new RegExp('quest-stat'), new RegExp('localhost')];
+const allowedUrls = [new RegExp('quest-stat', 'g'), new RegExp('localhost', 'g')];
 
 const corsOptions = {
   origin: (origin, callback) => {
