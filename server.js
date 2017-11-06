@@ -26,7 +26,7 @@ const corsOptions = {
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions));
 // TODO: Remove next route after configuring unit tests
 app.get('/rawGames/:gameId', (req, res) => {
   const gameId = R.path(['params', 'gameId'], req);
