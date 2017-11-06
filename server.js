@@ -36,7 +36,7 @@ app.get('/rawGames/:gameId', (req, res) => {
       res.send(data);
     });
 });
-app.get('/games', (req, res) => {
+app.get('/games', cors(corsOptions), (req, res) => {
   gameManagement.getSavedGames()
     .then((games) => {
       res.send(games);
@@ -45,7 +45,7 @@ app.get('/games', (req, res) => {
       res.status(500).send(error);
     });
 });
-app.post('/games/', (req, res) => {
+app.post('/games/', cors(corsOptions), (req, res) => {
   const gameId = R.path(['body', 'id'], req);
   const domain = R.path(['body', 'domain'], req);
   const isForceRefresh = R.pathOr(false, ['body', 'force'], req);
@@ -61,7 +61,7 @@ app.post('/games/', (req, res) => {
       res.status(500).send(error);
     });
 });
-app.put('/games/:gameId/update-levels', (req, res) => {
+app.put('/games/:gameId/update-levels', cors(corsOptions), (req, res) => {
   const gameId = R.path(['params', 'gameId'], req);
   const levels = R.path(['body'], req);
 
