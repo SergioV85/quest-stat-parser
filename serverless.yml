@@ -13,10 +13,10 @@ functions:
     handler: server.handler
     events:
       - http: 'GET /games'
-  createGame:
+  getGameDetails:
     handler: server.handler
     events:
-      - http: 'POST /games'
+      - http: 'GET /game'
   updateGame:
     handler: server.handler
     events:

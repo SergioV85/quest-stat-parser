@@ -48,10 +48,10 @@ app.get('/games', cors(corsOptions), (req, res) => {
       res.status(500).send(error);
     });
 });
-app.post('/games', cors(corsOptions), (req, res) => {
-  const gameId = R.path(['body', 'id'], req);
-  const domain = R.path(['body', 'domain'], req);
-  const isForceRefresh = R.pathOr(false, ['body', 'force'], req);
+app.get('/game', cors(corsOptions), (req, res) => {
+  const gameId = R.path(['query', 'id'], req);
+  const domain = R.path(['query', 'domain'], req);
+  const isForceRefresh = R.pathOr(false, ['query', 'force'], req);
 
   if (R.isNil(gameId) || R.isNil(domain)) {
     res.status(400).send('Bad Request');

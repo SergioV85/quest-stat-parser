@@ -11,10 +11,10 @@
         "LogGroupName": "/aws/lambda/quest-server-parser-prod-getGames"
       }
     },
-    "CreateGameLogGroup": {
+    "GetGameDetailsLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/quest-server-parser-prod-createGame"
+        "LogGroupName": "/aws/lambda/quest-server-parser-prod-getGameDetails"
       }
     },
     "UpdateGameLogGroup": {
@@ -67,7 +67,7 @@
                       "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-getGames:*"
                     },
                     {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-createGame:*"
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-getGameDetails:*"
                     },
                     {
                       "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-updateGame:*"
@@ -84,7 +84,7 @@
                       "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-getGames:*:*"
                     },
                     {
-                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-createGame:*:*"
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-getGameDetails:*:*"
                     },
                     {
                       "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/quest-server-parser-prod-updateGame:*:*"
@@ -116,7 +116,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/quest-server-parser/prod/1512425482730-2017-12-04T22:11:22.730Z/quest-server-parser.zip"
+          "S3Key": "serverless/quest-server-parser/prod/1512514869246-2017-12-05T23:01:09.246Z/quest-server-parser.zip"
         },
         "FunctionName": "quest-server-parser-prod-getGames",
         "Handler": "server.handler",
@@ -140,26 +140,26 @@
         "IamRoleLambdaExecution"
       ]
     },
-    "GetGamesLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k": {
+    "GetGamesLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetGamesLambdaFunction"
         },
-        "CodeSha256": "fE+/uUC+4Jd9lKN8u+yaF47TbO5nldwRoTCpxXQW39k="
+        "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
       }
     },
-    "CreateGameLambdaFunction": {
+    "GetGameDetailsLambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/quest-server-parser/prod/1512425482730-2017-12-04T22:11:22.730Z/quest-server-parser.zip"
+          "S3Key": "serverless/quest-server-parser/prod/1512514869246-2017-12-05T23:01:09.246Z/quest-server-parser.zip"
         },
-        "FunctionName": "quest-server-parser-prod-createGame",
+        "FunctionName": "quest-server-parser-prod-getGameDetails",
         "Handler": "server.handler",
         "MemorySize": 1024,
         "Role": {
@@ -177,18 +177,18 @@
         }
       },
       "DependsOn": [
-        "CreateGameLogGroup",
+        "GetGameDetailsLogGroup",
         "IamRoleLambdaExecution"
       ]
     },
-    "CreateGameLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k": {
+    "GetGameDetailsLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
-          "Ref": "CreateGameLambdaFunction"
+          "Ref": "GetGameDetailsLambdaFunction"
         },
-        "CodeSha256": "fE+/uUC+4Jd9lKN8u+yaF47TbO5nldwRoTCpxXQW39k="
+        "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
       }
     },
     "UpdateGameLambdaFunction": {
@@ -198,7 +198,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/quest-server-parser/prod/1512425482730-2017-12-04T22:11:22.730Z/quest-server-parser.zip"
+          "S3Key": "serverless/quest-server-parser/prod/1512514869246-2017-12-05T23:01:09.246Z/quest-server-parser.zip"
         },
         "FunctionName": "quest-server-parser-prod-updateGame",
         "Handler": "server.handler",
@@ -222,14 +222,14 @@
         "IamRoleLambdaExecution"
       ]
     },
-    "UpdateGameLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k": {
+    "UpdateGameLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "UpdateGameLambdaFunction"
         },
-        "CodeSha256": "fE+/uUC+4Jd9lKN8u+yaF47TbO5nldwRoTCpxXQW39k="
+        "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
       }
     },
     "ApiGatewayRestApi": {
@@ -248,6 +248,21 @@
           ]
         },
         "PathPart": "games",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGame": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "game",
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
@@ -304,13 +319,13 @@
         "MethodResponses": []
       }
     },
-    "ApiGatewayMethodGamesPost": {
+    "ApiGatewayMethodGameGet": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
-        "HttpMethod": "POST",
+        "HttpMethod": "GET",
         "RequestParameters": {},
         "ResourceId": {
-          "Ref": "ApiGatewayResourceGames"
+          "Ref": "ApiGatewayResourceGame"
         },
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
@@ -331,7 +346,7 @@
                 ":lambda:path/2015-03-31/functions/",
                 {
                   "Fn::GetAtt": [
-                    "CreateGameLambdaFunction",
+                    "GetGameDetailsLambdaFunction",
                     "Arn"
                   ]
                 },
@@ -382,7 +397,7 @@
         "MethodResponses": []
       }
     },
-    "ApiGatewayDeployment1512425482786": {
+    "ApiGatewayDeployment1512514869304": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -392,7 +407,7 @@
       },
       "DependsOn": [
         "ApiGatewayMethodGamesGet",
-        "ApiGatewayMethodGamesPost",
+        "ApiGatewayMethodGameGet",
         "ApiGatewayMethodGamesProxyVarPut"
       ]
     },
@@ -429,12 +444,12 @@
         }
       }
     },
-    "CreateGameLambdaPermissionApiGateway": {
+    "GetGameDetailsLambdaPermissionApiGateway": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "CreateGameLambdaFunction",
+            "GetGameDetailsLambdaFunction",
             "Arn"
           ]
         },
@@ -505,19 +520,19 @@
     "GetGamesLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetGamesLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k"
+        "Ref": "GetGamesLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
       }
     },
-    "CreateGameLambdaFunctionQualifiedArn": {
+    "GetGameDetailsLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "CreateGameLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k"
+        "Ref": "GetGameDetailsLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
       }
     },
     "UpdateGameLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "UpdateGameLambdaVersionfEuUC4Jd9lKN8uyaF47TbO5nldwRoTCpxXQW39k"
+        "Ref": "UpdateGameLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
       }
     },
     "ServiceEndpoint": {

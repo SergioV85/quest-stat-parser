@@ -9,7 +9,7 @@ const pgp = require('pg-promise')({
 
 const db = pgp(`${process.env.AMAZON_DB_URL}?ssl=true`);
 
-const getLevelId = (gameInfo, levelIndex) => ((gameInfo.id + (levelIndex / 1000)) * 1000);
+const getLevelId = (gameInfo, levelIndex) => (((gameInfo.id * 1000) + parseInt(levelIndex, 10)));
 
 const dbRequest = (preparedRequest) => db.manyOrNone(preparedRequest);
 
