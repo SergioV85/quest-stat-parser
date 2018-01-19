@@ -6,6 +6,18 @@ const pgp = require('pg-promise')({
   promiseLib: Promise,
   capSQL: true
 });
+const AWS = require('aws-sdk');
+
+AWS.config.update({
+  region: 'eu-central-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'us-east-1'
+  },
+  endpoint: 'https://dynamodb.eu-central-1.amazonaws.com'
+});
+const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 
 const db = pgp(`${process.env.AMAZON_DB_URL}?ssl=true`);
 
@@ -316,4 +328,49 @@ exports.updateLevelsInDatabase = (gameId, levels) => {
   const query = `${pgp.helpers.update(levels, cs)} WHERE v.id = t.id`;
   return db.none(query)
     .then(() => getLevelsFromDatabase(gameId));
+};
+
+exports.getGameFromDynamoDb = (gameId) => {
+  const gameData = {
+    TableName: 'quest-stat-games',
+    Key: {
+      game: gameId
+    }
+  };
+
+  return new Promise((resolve) => {
+    dynamoDbClient.get(gameData, (err, data) => {
+      if (err) {
+        console.log('get -> err', err);
+        resolve(null);
+      }
+      console.log('get -> data', data);
+      resolve(data);
+    });
+  });
+};
+
+exports.saveGameToDatabaseNosql = ({ info, stat }) => {
+  const gameData = {
+    TableName: 'quest-stat-games',
+    Item: {
+      game: info.id,
+      name: info.name,
+      domain: info.domain,
+      start: info.start,
+      finish: info.finish,
+      timezone: info.timezone,
+      levels: stat.levels,
+      finishResults: stat.finishResults,
+      dataByLevels: stat.dataByLevels,
+      dataByTeam: stat.dataByTeam
+    }
+  };
+
+  return dynamoDbClient.put(gameData, (err) => {
+    if (err) {
+      return err;
+    }
+    return { info, stat };
+  });
 };

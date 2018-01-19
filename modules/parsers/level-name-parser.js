@@ -31,7 +31,11 @@ const convertNameStringToObject = (index, strArray) => ({
     R.join(' '),
     R.replace('<br><span class="dismissed">Уровень снят</span>', ''),
     R.replace(/<span>\(<a\d*\W*.*<\/span>/g, ''),
-    R.trim
+    R.trim,
+    R.when(
+      R.isEmpty,
+      () => 'Итоговое время'
+    )
   )(strArray),
   position: index,
   type: R.pipe(
