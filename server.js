@@ -64,22 +64,6 @@ app.get('/game', cors(corsOptions), (req, res) => {
       res.status(500).send(error);
     });
 });
-app.get('/game/nosql', cors(corsOptions), (req, res) => {
-  const gameId = R.path(['query', 'id'], req);
-  const domain = R.path(['query', 'domain'], req);
-  const isForceRefresh = R.pathOr(false, ['query', 'force'], req);
-
-  if (R.isNil(gameId) || R.isNil(domain)) {
-    res.status(400).send('Bad Request');
-  }
-  gameManagement.getGameDataNoSql({ gameId, domain, isForceRefresh })
-    .then((gameData) => {
-      res.send(gameData);
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
-});
 app.put('/games/:gameId/update-levels', cors(corsOptions), (req, res) => {
   const gameId = R.path(['params', 'gameId'], req);
   const levels = R.path(['body'], req);
