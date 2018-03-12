@@ -40,35 +40,41 @@ const getLevelsFromDatabase = (gameId) => {
   });
 };
 
-exports.getAllSavedGames = () => dbRequest({
-  name: 'get-games',
-  text: 'SELECT id, domain, name, start, timezone FROM quest.games ORDER BY start DESC'
-});
+const deleteGameFromDb = (gameId) => {
+  const GameId = parseInt(gameId, 10);
 
-exports.updateLevelsInDatabase = (gameId, levels) => {
-  const cs = new pgp.helpers.ColumnSet(
-    ['?id', 'name', 'type'], {
-      table: {
-        table: 'levels',
-        schema: 'quest'
-      }
-    });
-
-  const query = `${pgp.helpers.update(levels, cs)} WHERE v.id = t.id`;
-  return db.none(query)
-    .then(() => getLevelsFromDatabase(gameId));
-};
-
-exports.getGameFromDb = (gameId) => {
-  const gameData = {
-    TableName: 'quest-stat-games',
-    Key: {
-      game: gameId
+  const requestParams = {
+    RequestItems: {
+      GameInfo: [{
+        DeleteRequest: {
+          Key: { GameId }
+        }
+      }],
+      Levels: [{
+        DeleteRequest: {
+          Key: { GameId }
+        }
+      }],
+      FinishResults: [{
+        DeleteRequest: {
+          Key: { GameId }
+        }
+      }],
+      StatByLevel: [{
+        DeleteRequest: {
+          Key: { GameId }
+        }
+      }],
+      StatByTeam: [{
+        DeleteRequest: {
+          Key: { GameId }
+        }
+      }],
     }
   };
 
   return new Promise((resolve) => {
-    dynamoDbClient.get(gameData, (err, data) => {
+    dynamoDbClient.batchWrite(requestParams, (err, data) => {
       if (err) {
         resolve(null);
       }
@@ -77,34 +83,150 @@ exports.getGameFromDb = (gameId) => {
   });
 };
 
-exports.saveGameToDb = ({ info, stat }) => {
-  const fullStat = {
-    levels: stat.levels,
-    finishResults: stat.finishResults,
-    dataByLevels: stat.dataByLevels,
-    dataByLevelsRow: groupStatByRow(stat.dataByLevels, 'levelIdx'),
-    dataByTeam: stat.dataByTeam
+const getGameFromDb = (gameId) => {
+  const GameId = parseInt(gameId, 10);
+
+  const requestParams = {
+    RequestItems: {
+      GameInfo: {
+        Keys: [
+          { GameId }
+        ]
+      },
+      Levels: {
+        Keys: [
+          { GameId }
+        ]
+      },
+      FinishResults: {
+        Keys: [
+          { GameId }
+        ]
+      },
+      StatByLevel: {
+        Keys: [
+          { GameId }
+        ]
+      },
+      StatByTeam: {
+        Keys: [
+          { GameId }
+        ]
+      }
+    }
   };
 
-  const gameData = {
-    TableName: 'quest-stat-games',
-    Item: {
-      game: info.id,
-      name: info.name,
-      domain: info.domain,
-      start: info.start,
-      finish: info.finish,
-      timezone: info.timezone,
-      ...fullStat
+  return new Promise((resolve) => {
+    dynamoDbClient.batchGet(requestParams, (err, data) => {
+      if (err) {
+        resolve(null);
+      }
+      resolve(data);
+    });
+  });
+};
+
+const getAllGamesFromDb = () =>
+  new Promise((resolve) => {
+    dynamoDbClient.scan({
+      TableName: 'GameInfo'
+    }, (err, data) => {
+      if (err) {
+        resolve(null);
+      }
+      resolve(data);
+    });
+  });
+
+exports.getAllSavedGames = () =>
+  getAllGamesFromDb().then((result) => result.Items);
+
+exports.updateLevelsInDatabase = (gameId, levels) => {
+  console.log('updateLevelsInDatabase -> gameId', gameId);
+  console.log('updateLevelsInDatabase -> levels', levels);
+  return true;
+};
+
+exports.getGameFromDb = (gameId) =>
+  getGameFromDb(gameId)
+    .then(({ Responses }) => R.pipe(
+        R.values,
+        R.flatten,
+        R.mergeAll
+      )(Responses))
+    .then((data) => {
+      const hasGameData = !R.isNil(data) && !R.isEmpty(data);
+      if (hasGameData) {
+        const DataByLevelsRow = groupStatByRow(data.DataByLevels, 'levelIdx');
+        return {
+          data: {
+            ...data,
+            DataByLevelsRow
+          }
+        };
+      }
+      return { data };
+    });
+
+exports.saveGameToDb = ({ info, stat }) => {
+  const GameId = parseInt(info.id, 10);
+
+  const requestParams = {
+    RequestItems: {
+      GameInfo: [{
+        PutRequest: {
+          Item: {
+            GameId,
+            GameName: info.name,
+            Domain: info.domain,
+            StartTime: info.start,
+            FinishTime: info.finish,
+            Timezone: info.timezone,
+          }
+        }
+      }],
+      Levels: [{
+        PutRequest: {
+          Item: {
+            GameId,
+            Levels: stat.levels
+          }
+        }
+      }],
+      FinishResults: [{
+        PutRequest: {
+          Item: {
+            GameId,
+            FinishResults: stat.finishResults
+          }
+        }
+      }],
+      StatByLevel: [{
+        PutRequest: {
+          Item: {
+            GameId,
+            DataByLevels: stat.dataByLevels
+          }
+        }
+      }],
+      StatByTeam: [{
+        PutRequest: {
+          Item: {
+            GameId,
+            DataByTeam: stat.dataByTeam
+          }
+        }
+      }]
     }
   };
 
   return new Promise((resolve, reject) => {
-    dynamoDbClient.put(gameData, (err) => {
+    dynamoDbClient.batchWrite(requestParams, (err) => {
       if (err) {
+        deleteGameFromDb(info.id);
         reject(err);
       }
-      resolve({ info, stat: fullStat });
+      resolve();
     });
   });
 };

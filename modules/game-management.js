@@ -21,18 +21,18 @@ const saveNewGameToDb = (gameId, domain) => {
 exports.getSavedGames = () => dbConnection.getAllSavedGames();
 
 exports.getGameData = ({ gameId, domain }) => dbConnection.getGameFromDb(gameId)
-  .then((data) => {
+  .then(({ data }) => {
     const hasSavedGame = !R.isNil(data) && !R.isEmpty(data);
 
     if (hasSavedGame) {
-      return data;
+      return { data };
     }
     return saveNewGameToDb(gameId, domain)
       .then(() => dbConnection.getGameFromDb(gameId));
   })
-  .then((result) => ({
-    info: R.pick(['domain', 'finish', 'game', 'name', 'start', 'timezone'], result.Item),
-    stat: R.pick(['dataByLevels', 'dataByLevelsRow', 'dataByTeam', 'finishResults', 'levels'], result.Item)
+  .then(({ data }) => ({
+    info: R.pick(['GameId', 'FinishTime', 'GameName', 'Domain', 'StatTime', 'Timezone'], data),
+    stat: R.pick(['DataByLevels', 'DataByLevelsRow', 'DataByTeam', 'FinishResults', 'Levels'], data)
   }));
 
 exports.updateLevelData = ({ gameId, levels }) => dbConnection.updateLevelsInDatabase(gameId, levels);
