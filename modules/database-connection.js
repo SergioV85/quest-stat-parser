@@ -1,10 +1,6 @@
 
 const R = require('ramda');
 const Promise = require('bluebird');
-const pgp = require('pg-promise')({
-  promiseLib: Promise,
-  capSQL: true
-});
 const AWS = require('aws-sdk');
 
 AWS.config.update({
@@ -18,10 +14,6 @@ AWS.config.update({
 });
 const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 
-const db = pgp(`${process.env.AMAZON_DB_URL}?ssl=true`);
-
-const dbRequest = (preparedRequest) => db.manyOrNone(preparedRequest);
-
 const groupStatByRow = (stat, fieldName) => R.pipe(
   R.map(R.prop('data')),
   R.flatten,
@@ -30,15 +22,6 @@ const groupStatByRow = (stat, fieldName) => R.pipe(
   R.transpose
 )(stat);
 
-const getLevelsFromDatabase = (gameId) => {
-  const levelRequest = ['id', 'name', 'level', 'position', 'type', 'removed'];
-
-  return dbRequest({
-    name: 'get-levels',
-    text: `SELECT ${levelRequest} FROM quest.levels WHERE game_id = $1 ORDER BY position`,
-    values: [gameId]
-  });
-};
 
 const deleteGameFromDb = (gameId) => {
   const GameId = parseInt(gameId, 10);
@@ -142,9 +125,28 @@ exports.getAllSavedGames = () =>
   getAllGamesFromDb().then((result) => result.Items);
 
 exports.updateLevelsInDatabase = (gameId, levels) => {
-  console.log('updateLevelsInDatabase -> gameId', gameId);
-  console.log('updateLevelsInDatabase -> levels', levels);
-  return true;
+  const GameId = parseInt(gameId, 10);
+
+  const updateParams = {
+    TableName: 'Levels',
+    Key: {
+      GameId
+    },
+    UpdateExpression: 'set Levels = :l',
+    ExpressionAttributeValues: {
+      ':l': levels
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  return new Promise((resolve, reject) => {
+    dynamoDbClient.update(updateParams, (err) => {
+      if (err) {
+        reject(err);
+      }
+      resolve();
+    });
+  });
 };
 
 exports.getGameFromDb = (gameId) =>
