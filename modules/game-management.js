@@ -2,7 +2,7 @@ const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
 
-const saveNewGameToDb = (gameId, domain) => {
+const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
   const gameData = {
     info: undefined,
     stat: undefined
@@ -14,20 +14,24 @@ const saveNewGameToDb = (gameId, domain) => {
     })
     .then((stat) => {
       gameData.stat = stat;
-      return dbConnection.saveGameToDb(gameData);
+      return dbConnection.saveGameToDb(gameData, existedLevelsData);
     });
 };
 
 exports.getSavedGames = () => dbConnection.getAllSavedGames();
 
-exports.getGameData = ({ gameId, domain }) => dbConnection.getGameFromDb(gameId)
+exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameFromDb(gameId)
   .then(({ data }) => {
     const hasSavedGame = !R.isNil(data) && !R.isEmpty(data);
 
-    if (hasSavedGame) {
+    if (hasSavedGame && !isForceRefresh) {
       return { data };
     }
-    return saveNewGameToDb(gameId, domain)
+    const existedLevelData = isForceRefresh && hasSavedGame
+      ? data.Levels
+      : null;
+
+    return saveNewGameToDb(gameId, domain, existedLevelData)
       .then(() => dbConnection.getGameFromDb(gameId));
   })
   .then(({ data }) => ({

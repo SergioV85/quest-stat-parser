@@ -22,6 +22,7 @@ const groupStatByRow = (stat, fieldName) => R.pipe(
   R.transpose
 )(stat);
 
+const keepLevelType = (newLevel, oldLevel) => R.set(R.lensProp('type'), oldLevel.type, newLevel);
 
 const deleteGameFromDb = (gameId) => {
   const GameId = parseInt(gameId, 10);
@@ -122,7 +123,10 @@ const getAllGamesFromDb = () =>
   });
 
 exports.getAllSavedGames = () =>
-  getAllGamesFromDb().then((result) => result.Items);
+  getAllGamesFromDb().then((result) => R.pipe(
+    R.prop('Items'),
+    R.sort(R.descend(R.prop('StartTime')))
+  )(result));
 
 exports.updateLevelsInDatabase = (gameId, levels) => {
   const GameId = parseInt(gameId, 10);
@@ -170,57 +174,65 @@ exports.getGameFromDb = (gameId) =>
       return { data };
     });
 
-exports.saveGameToDb = ({ info, stat }) => {
+exports.saveGameToDb = ({ info, stat }, existedLevelData) => {
   const GameId = parseInt(info.id, 10);
 
-  const requestParams = {
-    RequestItems: {
-      GameInfo: [{
-        PutRequest: {
-          Item: {
-            GameId,
-            GameName: info.name,
-            Domain: info.domain,
-            StartTime: info.start,
-            FinishTime: info.finish,
-            Timezone: info.timezone,
-          }
+  const fullItems = {
+    GameInfo: [{
+      PutRequest: {
+        Item: {
+          GameId,
+          GameName: info.name,
+          Domain: info.domain,
+          StartTime: info.start,
+          FinishTime: info.finish,
+          Timezone: info.timezone,
         }
-      }],
-      Levels: [{
-        PutRequest: {
-          Item: {
-            GameId,
-            Levels: stat.levels
-          }
+      }
+    }],
+    Levels: [{
+      PutRequest: {
+        Item: {
+          GameId,
+          Levels: stat.levels
         }
-      }],
-      FinishResults: [{
-        PutRequest: {
-          Item: {
-            GameId,
-            FinishResults: stat.finishResults
-          }
+      }
+    }],
+    FinishResults: [{
+      PutRequest: {
+        Item: {
+          GameId,
+          FinishResults: stat.finishResults
         }
-      }],
-      StatByLevel: [{
-        PutRequest: {
-          Item: {
-            GameId,
-            DataByLevels: stat.dataByLevels
-          }
+      }
+    }],
+    StatByLevel: [{
+      PutRequest: {
+        Item: {
+          GameId,
+          DataByLevels: stat.dataByLevels
         }
-      }],
-      StatByTeam: [{
-        PutRequest: {
-          Item: {
-            GameId,
-            DataByTeam: stat.dataByTeam
-          }
+      }
+    }],
+    StatByTeam: [{
+      PutRequest: {
+        Item: {
+          GameId,
+          DataByTeam: stat.dataByTeam
         }
-      }]
-    }
+      }
+    }]
   };
+
+  const RequestItems = R.isNil(existedLevelData)
+  ? fullItems
+  : R.set(
+      R.lensPath(['Levels', 0, 'PutRequest', 'Item', 'Levels']),
+      R.zipWith(keepLevelType, stat.levels, existedLevelData),
+      fullItems
+    );
+
+  const requestParams = { RequestItems };
 
   return new Promise((resolve, reject) => {
     dynamoDbClient.batchWrite(requestParams, (err) => {
