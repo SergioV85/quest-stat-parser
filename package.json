@@ -4,6 +4,7 @@
   "description": "A server statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
+    "install": "find ./node_modules/* -mtime +10950 -exec touch {} \\;",
     "test": "mocha test/",
     "test:coverage": "nyc --reporter=html --reporter=text mocha test/",
     "start:server": "http-server"
