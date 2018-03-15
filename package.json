@@ -1,6 +1,6 @@
 {
   "name": "quest-stat-parser-server",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A server statistic parser for Quest.Ua games",
   "main": "server.js",
   "scripts": {
@@ -20,11 +20,9 @@
     "dotenv": "^4.0.0",
     "express": "^4.15.4",
     "he": "^1.1.1",
-    "moment": "^2.18.1",
-    "pg": "7.2.0",
-    "pg-promise": "^6.5.1",
-    "ramda": "^0.24.1",
-    "request": "^2.81.0",
+    "moment": "^2.21.0",
+    "ramda": "^0.25.0",
+    "request": "^2.85.0",
     "request-promise": "^4.2.1",
     "serverless-http": "^1.5.2"
   },
