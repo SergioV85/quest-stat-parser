@@ -8,25 +8,13 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - echo Compiling the Node.js code
+      - aws cloudformation package --template-file sam.yaml
+                                   --s3-bucket quest-games-packages
+                                   --output-template-file sam-template.yaml
   post_build:
     commands:
       - echo Build completed on `date`
 artifacts:
+  type: zip
   files:
-    - server.js
-    - package.json
-    - template.json
-    - modules/*
-    - node_modules/serverless-http/*
-    - node_modules/express/*
-    - node_modules/cors/*
-    - node_modules/body-parser/*
-    - node_modules/ramda/*
-    - node_modules/request-promise/*
-    - node_modules/cheerio/*
-    - node_modules/cheerio-tableparser/*
-    - node_modules/bluebirde/*
-    - node_modules/aws-sdk/*
-    - node_modules/moment/*
-    - node_modules/he/*
+    - sam.yaml

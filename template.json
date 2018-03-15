@@ -138,16 +138,6 @@
           "IamRoleLambdaExecution"
         ]
       },
-      "GetGamesLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
-        "Type": "AWS::Lambda::Version",
-        "DeletionPolicy": "Retain",
-        "Properties": {
-          "FunctionName": {
-            "Ref": "GetGamesLambdaFunction"
-          },
-          "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
-        }
-      },
       "GetGameDetailsLambdaFunction": {
         "Type": "AWS::Lambda::Function",
         "Properties": {
@@ -177,16 +167,6 @@
           "IamRoleLambdaExecution"
         ]
       },
-      "GetGameDetailsLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
-        "Type": "AWS::Lambda::Version",
-        "DeletionPolicy": "Retain",
-        "Properties": {
-          "FunctionName": {
-            "Ref": "GetGameDetailsLambdaFunction"
-          },
-          "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
-        }
-      },
       "UpdateGameLambdaFunction": {
         "Type": "AWS::Lambda::Function",
         "Properties": {
@@ -215,16 +195,6 @@
           "UpdateGameLogGroup",
           "IamRoleLambdaExecution"
         ]
-      },
-      "UpdateGameLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ": {
-        "Type": "AWS::Lambda::Version",
-        "DeletionPolicy": "Retain",
-        "Properties": {
-          "FunctionName": {
-            "Ref": "UpdateGameLambdaFunction"
-          },
-          "CodeSha256": "SSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ="
-        }
       },
       "ApiGatewayRestApi": {
         "Type": "AWS::ApiGateway::RestApi",
@@ -509,24 +479,6 @@
       "ServerlessDeploymentBucketName": {
         "Value": {
           "Ref": "ServerlessDeploymentBucket"
-        }
-      },
-      "GetGamesLambdaFunctionQualifiedArn": {
-        "Description": "Current Lambda function version",
-        "Value": {
-          "Ref": "GetGamesLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
-        }
-      },
-      "GetGameDetailsLambdaFunctionQualifiedArn": {
-        "Description": "Current Lambda function version",
-        "Value": {
-          "Ref": "GetGameDetailsLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
-        }
-      },
-      "UpdateGameLambdaFunctionQualifiedArn": {
-        "Description": "Current Lambda function version",
-        "Value": {
-          "Ref": "UpdateGameLambdaVersionSSaDNdz30xNWEvYa95j1QAeAXM61fdKf7B55NQSVvUQ"
         }
       },
       "ServiceEndpoint": {
