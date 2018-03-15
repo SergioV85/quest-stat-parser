@@ -5,13 +5,16 @@ exports.handler = (event, context, callback) => {
     .then((games) => {
       callback(null, {
         statusCode: '200',
-        body: games,
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(games),
       });
     })
     .catch((error) => {
-      callback(null, {
+      callback({
         statusCode: '500',
-        body: error
+        body: JSON.stringify(error)
       });
     });
 };

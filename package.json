@@ -14,18 +14,13 @@
   "dependencies": {
     "aws-sdk": "^2.184.0",
     "bluebird": "^3.5.0",
-    "body-parser": "^1.17.2",
     "cheerio": "^1.0.0-rc.2",
     "cheerio-tableparser": "^1.0.1",
-    "cors": "^2.8.4",
-    "dotenv": "^4.0.0",
-    "express": "^4.15.4",
     "he": "^1.1.1",
     "moment": "^2.21.0",
     "ramda": "^0.25.0",
     "request": "^2.85.0",
-    "request-promise": "^4.2.1",
-    "serverless-http": "^1.5.2"
+    "request-promise": "^4.2.1"
   },
   "devDependencies": {
     "chai": "^4.1.2",

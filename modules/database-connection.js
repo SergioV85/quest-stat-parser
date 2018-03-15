@@ -5,11 +5,6 @@ const AWS = require('aws-sdk');
 
 AWS.config.update({
   region: 'eu-central-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: 'us-east-1'
-  },
   endpoint: 'https://dynamodb.eu-central-1.amazonaws.com'
 });
 const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
@@ -165,10 +160,7 @@ exports.getGameFromDb = (gameId) =>
       if (hasGameData) {
         const DataByLevelsRow = groupStatByRow(data.DataByLevels, 'levelIdx');
         return {
-          data: {
-            ...data,
-            DataByLevelsRow
-          }
+          data: R.merge(data, { DataByLevelsRow })
         };
       }
       return { data };
