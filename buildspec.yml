@@ -15,8 +15,9 @@ phases:
 artifacts:
   files:
     - server.js
-    - modules/*
     - package.json
+    - template.json
+    - modules/*
     - node_modules/serverless-http/*
     - node_modules/express/*
     - node_modules/cors/*
