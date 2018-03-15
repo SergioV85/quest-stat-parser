@@ -4,3 +4,4 @@ coverage/*
 serverless.yml
 .nyc_output
 .serverless
+package-lock.json

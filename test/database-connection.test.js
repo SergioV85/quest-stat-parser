@@ -5,10 +5,7 @@ const expect = chai.expect;
 
 describe('Database Connection Module', () => {
   describe('getAllSavedGames', () => {});
-  describe('getGameInfoFromDatabase', () => {});
-  describe('getLevelFromDatabase', () => {});
-  describe('getFullStatFromDatabase', () => {});
-  describe('saveGameInfoToDatabase', () => {});
-  describe('saveGameDataToDatabase', () => {});
   describe('updateLevelsInDatabase', () => {});
+  describe('getGameFromDb', () => {});
+  describe('saveGameToDb', () => {});
 });

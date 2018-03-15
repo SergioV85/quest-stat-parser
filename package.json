@@ -11,6 +11,7 @@
   "author": "Serhii Vozniak",
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.184.0",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
     "cheerio": "^1.0.0-rc.2",

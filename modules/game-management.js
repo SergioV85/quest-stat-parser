@@ -1,45 +1,42 @@
 const R = require('ramda');
-const moment = require('moment');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
 
-exports.getSavedGames = () => dbConnection.getAllSavedGames();
-
-exports.getGameData = ({ gameId, domain, isForceRefresh }) => {
+const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
   const gameData = {
-    info: null,
-    stat: null
+    info: undefined,
+    stat: undefined
   };
-  return dbConnection.getGameInfoFromDatabase(gameId)
-    .then((results) => {
-      if (R.isNil(results) || R.isEmpty(results)) {
-        return webstatConvertor.getGameInfo(domain, gameId)
-          .then((parsedGameData) => dbConnection.saveGameInfoToDatabase(parsedGameData));
-      }
-      return R.head(results);
-    })
-    .then((data) => {
-      gameData.info = data;
-      if (!isForceRefresh && !R.isNil(data.last_updated) && moment(data.last_updated).isAfter(data.finish)) {
-        return dbConnection.getFullStatFromDatabase(gameId);
-      }
-      return null;
-    })
-    .then((stat) => {
-      if (R.isNil(stat) || R.isEmpty(stat)) {
-        return webstatConvertor.getGameStat(domain, gameId, gameData.info)
-          .then((gameStat) => dbConnection.saveGameDataToDatabase(gameData.info, gameStat))
-          .then(() => dbConnection.getFullStatFromDatabase(gameId));
-      }
-      return stat;
+  return webstatConvertor.getGameInfo(domain, gameId)
+    .then((parsedGameData) => {
+      gameData.info = parsedGameData;
+      return webstatConvertor.getGameStat(domain, gameId, gameData.info);
     })
     .then((stat) => {
       gameData.stat = stat;
-      return gameData;
-    })
-    .catch((error) => {
-      throw error;
+      return dbConnection.saveGameToDb(gameData, existedLevelsData);
     });
 };
+
+exports.getSavedGames = () => dbConnection.getAllSavedGames();
+
+exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameFromDb(gameId)
+  .then(({ data }) => {
+    const hasSavedGame = !R.isNil(data) && !R.isEmpty(data);
+
+    if (hasSavedGame && !isForceRefresh) {
+      return { data };
+    }
+    const existedLevelData = isForceRefresh && hasSavedGame
+      ? data.Levels
+      : null;
+
+    return saveNewGameToDb(gameId, domain, existedLevelData)
+      .then(() => dbConnection.getGameFromDb(gameId));
+  })
+  .then(({ data }) => ({
+    info: R.pick(['GameId', 'FinishTime', 'GameName', 'Domain', 'StatTime', 'Timezone'], data),
+    stat: R.pick(['DataByLevels', 'DataByLevelsRow', 'DataByTeam', 'FinishResults', 'Levels'], data)
+  }));
 
 exports.updateLevelData = ({ gameId, levels }) => dbConnection.updateLevelsInDatabase(gameId, levels);
