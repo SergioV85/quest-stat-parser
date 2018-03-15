@@ -8,9 +8,7 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - aws cloudformation package --template-file sam.yaml
-                                   --s3-bucket quest-games-packages
-                                   --output-template-file sam-template.yaml
+      - aws cloudformation package --template-file sam.yaml --s3-bucket quest-games-packages --output-template-file sam-template.yaml
   post_build:
     commands:
       - echo Build completed on `date`
