@@ -1,6 +1,8 @@
 const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
+const fileConnection = require('./file-connection.js');
+const monitoringAnalyser = require('./parsers/monitoring-analyser.js');
 
 const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
   const gameData = {
@@ -40,3 +42,15 @@ exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGa
   }));
 
 exports.updateLevelData = ({ gameId, levels }) => dbConnection.updateLevelsInDatabase(gameId, levels);
+
+exports.getMonitoringData = ({ gameId, domain }) => dbConnection.checkMonitoringLogExistence(gameId)
+  .then((data) => {
+    if (!R.isNil(data)) {
+      if (data.Saved && !data.Parsed) {
+        return fileConnection.parseSavedLogs(gameId)
+          .then((jsonLog) => monitoringAnalyser.calculateTotalMonitoringData(jsonLog));
+      }
+      return data;
+    }
+    return webstatConvertor.retrieveGameMonitoring(domain, gameId);
+  });

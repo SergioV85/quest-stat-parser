@@ -3,11 +3,10 @@ const R = require('ramda');
 const Promise = require('bluebird');
 const AWS = require('aws-sdk');
 
-AWS.config.update({
+const dynamoDbClient = new AWS.DynamoDB.DocumentClient({
   region: 'eu-central-1',
   endpoint: 'https://dynamodb.eu-central-1.amazonaws.com'
 });
-const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 
 const groupStatByRow = (stat, fieldName) => R.pipe(
   R.map(R.prop('data')),
@@ -230,6 +229,46 @@ exports.saveGameToDb = ({ info, stat }, existedLevelData) => {
     dynamoDbClient.batchWrite(requestParams, (err) => {
       if (err) {
         deleteGameFromDb(info.id);
+        reject(err);
+      }
+      resolve();
+    });
+  });
+};
+exports.checkMonitoringLogExistence = (gameId) => {
+  const GameId = parseInt(gameId, 10);
+
+  const params = {
+    TableName: 'GameMonitoring',
+    Key: {
+      GameId
+    }
+  };
+
+  return new Promise((resolve) => {
+    dynamoDbClient.get(params, (err, data) => {
+      if (err) {
+        resolve(null);
+      }
+      resolve(data.Item);
+    });
+  });
+};
+exports.saveMonitoringPageToDb = (gameId, changedData) => {
+  const GameId = parseInt(gameId, 10);
+
+  const updateParams = {
+    TableName: 'GameMonitoring',
+    Key: {
+      GameId
+    },
+    ...changedData,
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  return new Promise((resolve, reject) => {
+    dynamoDbClient.update(updateParams, (err) => {
+      if (err) {
         reject(err);
       }
       resolve();

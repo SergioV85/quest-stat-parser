@@ -19,3 +19,13 @@ functions:
     handler: update-levels.handler
     events:
       - http: 'PUT /games/{proxy+}'
+  monitoring:
+    handler: monitoring.handler
+    environment:
+      EN_LOGIN: ${ssm:EN_LOGIN}
+      EN_PASSWORD: ${ssm:EN_PASSWORD~true}
+    events:
+      - http: 'GET /game-monitoring'
+
+plugins:
+  - serverless-offline
