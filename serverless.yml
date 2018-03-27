@@ -5,6 +5,9 @@ provider:
   runtime: nodejs6.10
   region: eu-central-1
   stage: prod
+  environment:
+    MONGO_ATLAS_User: ${ssm:Mongo_Atlas_Quest_user}
+    MONGO_ATLAS_Password: ${ssm:Mongo_Atlas_Quest_pass~true}
 
 functions:
   getGames:

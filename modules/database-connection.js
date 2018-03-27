@@ -2,6 +2,22 @@
 const R = require('ramda');
 const Promise = require('bluebird');
 const AWS = require('aws-sdk');
+const MongoClient = require('mongodb').MongoClient;
+
+const uri = `mongodb://${process.env.MONGO_ATLAS_User}:${process.env.MONGO_ATLAS_Password}@quest-stat-shard-00-00-ky7li.mongodb.net:27017,quest-stat-shard-00-01-ky7li.mongodb.net:27017,quest-stat-shard-00-02-ky7li.mongodb.net:27017/quest?ssl=true&replicaSet=Quest-Stat-shard-0&authSource=admin`;
+
+const getGameFromMongo = () => {
+  MongoClient.connect(uri, (err, db) => {
+    const questDb = db.db('quest');
+    if (err) throw err;
+    const gameInfoCollection = questDb.collection('Info');
+    gameInfoCollection.findOne({ GameId: 59429 })
+      .then((gameData) => {
+        console.log('gameInfoCollection.findOne -> gameData', gameData);
+        db.close();
+      });
+  });
+};
 
 const dynamoDbClient = new AWS.DynamoDB.DocumentClient({
   region: 'eu-central-1',
@@ -116,11 +132,13 @@ const getAllGamesFromDb = () =>
     });
   });
 
-exports.getAllSavedGames = () =>
-  getAllGamesFromDb().then((result) => R.pipe(
+exports.getAllSavedGames = () => {
+  getGameFromMongo();
+  return getAllGamesFromDb().then((result) => R.pipe(
     R.prop('Items'),
     R.sort(R.descend(R.prop('StartTime')))
   )(result));
+};
 
 exports.updateLevelsInDatabase = (gameId, levels) => {
   const GameId = parseInt(gameId, 10);
