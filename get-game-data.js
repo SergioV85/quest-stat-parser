@@ -2,7 +2,10 @@ const R = require('ramda');
 const gameManagement = require('./modules/game-management');
 
 exports.handler = (event, context, callback) => {
-  const gameId = R.path(['queryStringParameters', 'id'], event);
+  const gameId = R.pipe(
+    R.path(['queryStringParameters', 'id']),
+    parseInt
+  )(event);
   const domain = R.path(['queryStringParameters', 'domain'], event);
   const isForceRefresh = R.pathOr(false, ['queryStringParameters', 'force'], event);
 

@@ -16,28 +16,28 @@ const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
     })
     .then((stat) => {
       gameData.stat = stat;
-      return dbConnection.saveGameToDb(gameData, existedLevelsData);
+      return dbConnection.saveGame(gameData, existedLevelsData);
     });
 };
 
-exports.getSavedGames = () => dbConnection.getAllSavedGames();
+exports.getSavedGames = () => dbConnection.getSavedGames();
 
-exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameFromDb(gameId)
-  .then(({ data }) => {
+exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameInfo(gameId)
+  .then((data) => {
     const hasSavedGame = !R.isNil(data) && !R.isEmpty(data);
 
     if (hasSavedGame && !isForceRefresh) {
-      return { data };
+      return data;
     }
     const existedLevelData = isForceRefresh && hasSavedGame
       ? data.Levels
       : null;
 
     return saveNewGameToDb(gameId, domain, existedLevelData)
-      .then(() => dbConnection.getGameFromDb(gameId));
+      .then(() => dbConnection.getGameInfo(gameId));
   })
-  .then(({ data }) => ({
-    info: R.pick(['GameId', 'FinishTime', 'GameName', 'Domain', 'StatTime', 'Timezone'], data),
+  .then((data) => ({
+    info: R.pick(['GameId', 'FinishTime', 'GameName', 'Domain', 'StartTime', 'Timezone'], data),
     stat: R.pick(['DataByLevels', 'DataByLevelsRow', 'DataByTeam', 'FinishResults', 'Levels'], data)
   }));
 

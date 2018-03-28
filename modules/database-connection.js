@@ -1,23 +1,11 @@
 
 const R = require('ramda');
 const Promise = require('bluebird');
+const moment = require('moment');
 const AWS = require('aws-sdk');
 const MongoClient = require('mongodb').MongoClient;
 
 const uri = `mongodb://${process.env.MONGO_ATLAS_User}:${process.env.MONGO_ATLAS_Password}@quest-stat-shard-00-00-ky7li.mongodb.net:27017,quest-stat-shard-00-01-ky7li.mongodb.net:27017,quest-stat-shard-00-02-ky7li.mongodb.net:27017/quest?ssl=true&replicaSet=Quest-Stat-shard-0&authSource=admin`;
-
-const getGameFromMongo = () => {
-  MongoClient.connect(uri, (err, db) => {
-    const questDb = db.db('quest');
-    if (err) throw err;
-    const gameInfoCollection = questDb.collection('Info');
-    gameInfoCollection.findOne({ GameId: 59429 })
-      .then((gameData) => {
-        console.log('gameInfoCollection.findOne -> gameData', gameData);
-        db.close();
-      });
-  });
-};
 
 const dynamoDbClient = new AWS.DynamoDB.DocumentClient({
   region: 'eu-central-1',
@@ -132,13 +120,86 @@ const getAllGamesFromDb = () =>
     });
   });
 
-exports.getAllSavedGames = () => {
-  getGameFromMongo();
-  return getAllGamesFromDb().then((result) => R.pipe(
+/* MongoDB requests */
+const saveDocumentToCollection = (collectionName, document) => MongoClient
+  .connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection(collectionName)
+    .insertOne(document)
+    .then(() => {
+      db.close();
+    })
+  );
+const getDocumentFromCollection = (collectionName, GameId) => MongoClient
+  .connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection(collectionName)
+    .findOne({ GameId })
+    .then((document) => {
+      db.close();
+      return document;
+    })
+  );
+
+exports.getSavedGames = () => MongoClient
+  .connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection('Info')
+    .find()
+    .toArray()
+    .then((games) => {
+      db.close();
+      return games;
+    })
+  );
+
+exports.getGameInfo = (GameId) => Promise.all([
+  getDocumentFromCollection('Info', GameId),
+  getDocumentFromCollection('Levels', GameId),
+  getDocumentFromCollection('Stats', GameId)
+])
+.then((data) => R.mergeAll(data));
+
+exports.saveGame = ({ info, stat }) => {
+  const GameId = parseInt(info.id, 10);
+  const gameInfo = {
+    GameId,
+    GameName: info.name,
+    Domain: info.domain,
+    StartTime: moment(info.start).toDate(),
+    FinishTime: moment(info.finish).toDate(),
+    Timezone: info.timezone,
+  };
+  const levels = {
+    GameId,
+    Levels: stat.levels
+  };
+  const gameStat = {
+    GameId,
+    FinishResults: stat.finishResults,
+    DataByLevels: groupStatByRow(stat.dataByLevels, 'levelIdx'),
+    DataByTeam: stat.dataByTeam
+  };
+
+  return Promise.all([
+    saveDocumentToCollection('Info', gameInfo),
+    saveDocumentToCollection('Levels', levels),
+    saveDocumentToCollection('Stats', gameStat)
+  ]);
+};
+
+exports.updateLevels = (gameId, levels) => {};
+
+/* DynamoDb requests */
+exports.getAllSavedGames = () => getAllGamesFromDb()
+  .then((result) => R.pipe(
     R.prop('Items'),
     R.sort(R.descend(R.prop('StartTime')))
   )(result));
-};
+
 
 exports.updateLevelsInDatabase = (gameId, levels) => {
   const GameId = parseInt(gameId, 10);
