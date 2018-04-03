@@ -1,8 +1,9 @@
 const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
-const fileConnection = require('./file-connection.js');
 const monitoringAnalyser = require('./parsers/monitoring-analyser.js');
+
+const getExistedLevelType = (key, oldLevelValue, newLevelValue) => (key === 'type' ? oldLevelValue : newLevelValue);
 
 const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
   const gameData = {
@@ -15,7 +16,13 @@ const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
       return webstatConvertor.getGameStat(domain, gameId, gameData.info);
     })
     .then((stat) => {
-      gameData.stat = stat;
+      const levelsData = R.unless(
+        () => R.isNil(existedLevelsData),
+        R.zipWith(R.mergeWithKey(getExistedLevelType), existedLevelsData)
+      )(stat.levels);
+
+      gameData.stat = R.merge(stat, { levels: levelsData });
+
       return dbConnection.saveGame(gameData, existedLevelsData);
     });
 };
@@ -38,19 +45,25 @@ exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGa
   })
   .then((data) => ({
     info: R.pick(['GameId', 'FinishTime', 'GameName', 'Domain', 'StartTime', 'Timezone'], data),
-    stat: R.pick(['DataByLevels', 'DataByLevelsRow', 'DataByTeam', 'FinishResults', 'Levels'], data)
+    stat: R.pick(['DataByLevels', 'DataByTeam', 'FinishResults', 'Levels'], data)
   }));
 
-exports.updateLevelData = ({ gameId, levels }) => dbConnection.updateLevelsInDatabase(gameId, levels);
+exports.updateLevelData = ({ gameId, levels }) => dbConnection.updateLevels(gameId, levels);
 
-exports.getMonitoringData = ({ gameId, domain }) => dbConnection.checkMonitoringLogExistence(gameId)
+exports.getMonitoringData = ({ gameId, domain }) => dbConnection.getMonitoringStatus(gameId)
   .then((data) => {
     if (!R.isNil(data)) {
-      if (data.Saved && !data.Parsed) {
+      if (data.parsed) {
+        return { parsed: true };
+      }
+      return { parsed: false };
+      /*
+      if (data.Saved && !data.parsed) {
         return fileConnection.parseSavedLogs(gameId)
           .then((jsonLog) => monitoringAnalyser.calculateTotalMonitoringData(jsonLog));
       }
       return data;
+      */
     }
     return webstatConvertor.retrieveGameMonitoring(domain, gameId);
   });

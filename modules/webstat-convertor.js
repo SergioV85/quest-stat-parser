@@ -4,7 +4,6 @@ const cheerioTableparser = require('cheerio-tableparser');
 const R = require('ramda');
 const async = require('async');
 const databaseConnector = require('./database-connection.js');
-const fileConnector = require('./file-connection.js');
 const gameInfoParser = require('./parsers/game-info-parser.js');
 const levelNameParser = require('./parsers/level-name-parser.js');
 const teamDataParser = require('./parsers/team-data-parser.js');
@@ -101,21 +100,14 @@ const getMonitoringPage = (domain, gameId, page = 1) => request({
 
 const getMonitoring = (domain, gameId, numberOfPages) => {
   const asyncRequests = [];
-  fileConnector.createLogFile(gameId);
-  const newLogEntry = {
-    UpdateExpression: 'set Saved = :s',
-    ExpressionAttributeValues: {
-      ':s': false
-    },
-  };
-  databaseConnector.saveMonitoringPageToDb(gameId, newLogEntry);
+  databaseConnector.setMonitoringStatus(gameId, { parsed: false });
 
   for (let i = 1; i < numberOfPages; i++) {
     const requestFunc = (callback) => {
       getMonitoringPage(domain, gameId, i)
         .then((rawData) => {
           const parsedData = parseMonitoringData(rawData);
-          fileConnector.saveMonitoringToFile(gameId, parsedData);
+          databaseConnector.saveMonitoringData(gameId, parsedData);
           return callback(null);
         }, (error) => callback(error));
     };
@@ -123,23 +115,13 @@ const getMonitoring = (domain, gameId, numberOfPages) => {
   }
 
   const finishExecution = () => {
-    fileConnector.saveMonitoringToS3(gameId)
-      .then(() => {
-        const storedLogEntry = {
-          UpdateExpression: 'set Saved = :s, Parsed = :p',
-          ExpressionAttributeValues: {
-            ':s': true,
-            ':p': false
-          },
-        };
-        databaseConnector.saveMonitoringPageToDb(gameId, storedLogEntry);
-      });
+    databaseConnector.setMonitoringStatus(gameId, { parsed: true });
   };
 
   async.parallelLimit(asyncRequests, 10, finishExecution);
 
   return {
-    MonitoringStored: false
+    parsed: false
   };
 };
 
