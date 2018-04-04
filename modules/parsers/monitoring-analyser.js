@@ -39,3 +39,6 @@ exports.calculateTotalMonitoringData = (jsonLogs) => ({
   // byLevels: getTotalStat(jsonLogs),
   byTeams: getDetailsByTeams(jsonLogs)
 });
+
+exports.getGameMonitoringData = (gameId) => {
+}

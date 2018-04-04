@@ -86,7 +86,7 @@ const loginToEncounter = (domain) => request({
   },
   followAllRedirects: true
 });
-const getMonitoringPage = (domain, gameId, page = 1) => request({
+const requestMonitoringPage = (domain, gameId, page = 1) => request({
   method: 'GET',
   url: `http://${domain}/ALoader/GameLoader.aspx`,
   qs: {
@@ -98,30 +98,33 @@ const getMonitoringPage = (domain, gameId, page = 1) => request({
   transform: (body) => cheerio.load(body)
 });
 
+const getMonitoringData = (domain, gameId, i) => requestMonitoringPage(domain, gameId, i)
+  .then(parseMonitoringData)
+  .then((parsedData) => databaseConnector.saveMonitoringData(gameId, parsedData))
+  .then(() => databaseConnector.setMonitoringStatus(gameId, { pageSaved: i }));
+
 const getMonitoring = (domain, gameId, numberOfPages) => {
-  const asyncRequests = [];
-  databaseConnector.setMonitoringStatus(gameId, { parsed: false });
+  const totalPages = parseInt(numberOfPages, 10);
+  databaseConnector.setMonitoringStatus(gameId, { parsed: false, totalPages });
 
-  for (let i = 1; i < numberOfPages; i++) {
-    const requestFunc = (callback) => {
-      getMonitoringPage(domain, gameId, i)
-        .then((rawData) => {
-          const parsedData = parseMonitoringData(rawData);
-          databaseConnector.saveMonitoringData(gameId, parsedData);
-          return callback(null);
-        }, (error) => callback(error));
-    };
-    asyncRequests.push(requestFunc);
-  }
-
-  const finishExecution = () => {
-    databaseConnector.setMonitoringStatus(gameId, { parsed: true });
-  };
-
-  async.parallelLimit(asyncRequests, 10, finishExecution);
+  async.timesSeries(numberOfPages, (i, next) => {
+    setTimeout(() => {
+      getMonitoringData(domain, gameId, (i + 1))
+        .then(() => next(null))
+        .catch((err) => next(err));
+    }, 1000);
+  }, (err) => {
+    if (R.isNil(err)) {
+      databaseConnector.setMonitoringStatus(gameId, { parsed: true });
+    } else {
+      databaseConnector.setMonitoringStatus(gameId, { parsed: false, gotError: true, error: err });
+    }
+  });
 
   return {
-    parsed: false
+    parsed: false,
+    totalPages,
+    parsedPages: 1
   };
 };
 
@@ -135,7 +138,7 @@ exports.getGameStat = (domain, gameId, gameInfo) => pageRequest(`http://${domain
   .then((gameStatHtml) => parseGameStat(gameStatHtml, gameInfo));
 
 exports.retrieveGameMonitoring = (domain, gameId) => loginToEncounter(domain)
-  .then(() => getMonitoringPage(domain, gameId))
+  .then(() => requestMonitoringPage(domain, gameId))
   .then((rawData) => parseMonitoringInfo(rawData))
   .then((numberOfPages) => getMonitoring(domain, gameId, numberOfPages))
   .catch((error) => {

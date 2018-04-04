@@ -18,11 +18,23 @@ const getTeamName = (string) => R.pipe(
   R.head,
   R.slice(1, -1)
 )(string);
+const getTeamId = (string) => R.pipe(
+  R.match(/tid=\d*/g),
+  R.head,
+  R.replace('tid=', ''),
+  parseInt
+)(string);
 const getUserName = (string) => R.pipe(
   he.decode,
   R.match(/>.*?</g),
   R.last,
   R.slice(1, -1)
+)(string);
+const getUserId = (string) => R.pipe(
+  R.match(/uid=\d*/g),
+  R.head,
+  R.replace('uid=', ''),
+  parseInt
 )(string);
 const getAnswerType = (string) => R.pipe(
   he.decode,
@@ -46,8 +58,10 @@ const isRemoved = (string) => R.pipe(
 
 const convertToEntry = ([levelNumber, teamAndUser, answerStatus, code, time]) => ({
   level: parseInt(levelNumber, 10),
-  team: getTeamName(teamAndUser),
-  user: getUserName(teamAndUser),
+  teamName: getTeamName(teamAndUser),
+  teamId: getTeamId(teamAndUser),
+  userName: getUserName(teamAndUser),
+  userId: getUserId(teamAndUser),
   isSuccess: getAnswerType(answerStatus),
   code: getCode(code),
   time: he.decode(time),

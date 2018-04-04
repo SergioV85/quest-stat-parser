@@ -1,7 +1,6 @@
 const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
-const monitoringAnalyser = require('./parsers/monitoring-analyser.js');
 
 const getExistedLevelType = (key, oldLevelValue, newLevelValue) => (key === 'type' ? oldLevelValue : newLevelValue);
 
@@ -54,16 +53,21 @@ exports.getMonitoringData = ({ gameId, domain }) => dbConnection.getMonitoringSt
   .then((data) => {
     if (!R.isNil(data)) {
       if (data.parsed) {
-        return { parsed: true };
-      }
-      return { parsed: false };
-      /*
-      if (data.Saved && !data.parsed) {
-        return fileConnection.parseSavedLogs(gameId)
-          .then((jsonLog) => monitoringAnalyser.calculateTotalMonitoringData(jsonLog));
+        return dbConnection.getTotalGameMonitoring(gameId)
+          .then(([totalInputs, correctCodes]) => R.map(
+            (team) => {
+              const teamId = R.path(['_id', 'teamId'], team);
+              return R.pipe(
+                R.find(R.pathEq(['_id', 'teamId'], teamId)),
+                R.prop('codesCounts'),
+                R.objOf('correctCodesQuantity'),
+                R.merge(team)
+              )(correctCodes);
+            },
+            totalInputs
+          ));
       }
       return data;
-      */
     }
     return webstatConvertor.retrieveGameMonitoring(domain, gameId);
   });

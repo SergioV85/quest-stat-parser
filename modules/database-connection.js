@@ -39,6 +39,38 @@ const getDocumentFromCollection = (collectionName, GameId) => MongoClient
     })
   );
 
+const getAggregatedMonitoring = (query) => MongoClient.connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection('Monitoring')
+    .aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: {
+            teamId: '$teamId',
+            teamName: '$teamName',
+          },
+          uniqueCodes: {
+            $addToSet: '$code'
+          }
+        }
+      },
+      {
+        $project: {
+          codesCounts: {
+            $size: '$uniqueCodes'
+          }
+        }
+      },
+    ])
+    .toArray()
+    .then((stats) => {
+      db.close();
+      return stats;
+    })
+  );
+
 exports.getSavedGames = () => MongoClient
   .connect(uri)
   .then((db) => db
@@ -120,7 +152,15 @@ exports.setMonitoringStatus = (gameId, status) => {
     GameId,
     ...status
   };
-  return saveDocumentToCollection(GameId, 'MonitoringStatus', doc);
+  return MongoClient.connect(uri)
+    .then((db) => db
+      .db('quest')
+      .collection('MonitoringStatus')
+      .updateOne({ GameId }, { $set: doc }, { upsert: true })
+      .then(() => {
+        db.close();
+      })
+    );
 };
 
 exports.saveMonitoringData = (gameId, entries) => {
@@ -139,4 +179,23 @@ exports.saveMonitoringData = (gameId, entries) => {
         db.close();
       })
     );
+};
+
+exports.getTotalGameMonitoring = (gameId) => {
+  const GameId = parseInt(gameId, 10);
+
+  const totalCodesRequest = { GameId };
+  const correctCodesRequest = {
+    $and: [
+      { GameId: { $eq: GameId } },
+      { isSuccess: true },
+      { isTimeout: false },
+      { isRemovedLevel: false }
+    ]
+  };
+
+  return Promise.all([
+    getAggregatedMonitoring(totalCodesRequest),
+    getAggregatedMonitoring(correctCodesRequest)
+  ]);
 };
