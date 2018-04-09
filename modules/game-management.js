@@ -26,6 +26,42 @@ const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
     });
 };
 
+const mergeMonitoringData = ([totalInputs, correctCodes], propName) => ({
+  parsed: true,
+  totalData: R.pipe(
+    R.map((row) => {
+      const uniqueId = R.path(['_id', propName], row);
+      return R.pipe(
+        R.find(R.pathEq(['_id', propName], uniqueId)),
+        R.propOr(0, 'codesCounts'),
+        R.objOf('correctCodesQuantity'),
+        R.merge(row)
+      )(correctCodes);
+    }),
+    R.map((row) => {
+      const correctCodesPercent = R.ifElse(
+        R.pipe(
+          R.prop('codesCounts'),
+          R.anyPass([
+            R.isNil,
+            R.isEmpty,
+            R.equals(0)
+          ])
+        ),
+        R.always(0),
+        R.pipe(
+          R.propOr(0, 'correctCodesQuantity'),
+          R.flip(R.divide)(
+            R.prop('codesCounts', row)
+          ),
+          R.multiply(100)
+        )
+      )(row);
+      return R.merge(row, { correctCodesPercent });
+    })
+  )(totalInputs)
+});
+
 exports.getSavedGames = () => dbConnection.getSavedGames();
 
 exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameInfo(gameId)
@@ -54,20 +90,40 @@ exports.getMonitoringData = ({ gameId, domain }) => dbConnection.getMonitoringSt
     if (!R.isNil(data)) {
       if (data.parsed) {
         return dbConnection.getTotalGameMonitoring(gameId)
-          .then(([totalInputs, correctCodes]) => R.map(
-            (team) => {
-              const teamId = R.path(['_id', 'teamId'], team);
-              return R.pipe(
-                R.find(R.pathEq(['_id', 'teamId'], teamId)),
-                R.prop('codesCounts'),
-                R.objOf('correctCodesQuantity'),
-                R.merge(team)
-              )(correctCodes);
-            },
-            totalInputs
-          ));
+          .then((results) => mergeMonitoringData(results, 'teamId'));
       }
       return data;
     }
     return webstatConvertor.retrieveGameMonitoring(domain, gameId);
   });
+
+exports.getMonitoringDetails = (({ gameId, teamId, detailsType }) => {
+  let firstGroupOperator;
+  let secondGroupOperator;
+
+  switch (detailsType) {
+    case 'byTeam':
+    default:
+      firstGroupOperator = 'level';
+      secondGroupOperator = 'player';
+  }
+
+  return Promise.all([
+    dbConnection.getMonitoringByDetails(gameId, teamId, firstGroupOperator)
+      .then((results) => mergeMonitoringData(results, 'level')),
+    dbConnection.getMonitoringByDetails(gameId, teamId, secondGroupOperator)
+      .then((results) => mergeMonitoringData(results, 'userId'))
+      .then(R.pipe(
+        R.prop('totalData'),
+        R.sort(
+          R.descend(
+            R.prop('correctCodesQuantity')
+          )
+        )
+      ))
+  ]).then(([dataByLevels, dataByUsers]) => ({
+    parsed: true,
+    dataByLevel: R.prop('totalData', dataByLevels),
+    dataByUser: dataByUsers,
+  }));
+});

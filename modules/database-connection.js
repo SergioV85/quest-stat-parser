@@ -39,31 +39,11 @@ const getDocumentFromCollection = (collectionName, GameId) => MongoClient
     })
   );
 
-const getAggregatedMonitoring = (query) => MongoClient.connect(uri)
+const getAggregatedMonitoring = (aggregationConfig) => MongoClient.connect(uri)
   .then((db) => db
     .db('quest')
     .collection('Monitoring')
-    .aggregate([
-      { $match: query },
-      {
-        $group: {
-          _id: {
-            teamId: '$teamId',
-            teamName: '$teamName',
-          },
-          uniqueCodes: {
-            $addToSet: '$code'
-          }
-        }
-      },
-      {
-        $project: {
-          codesCounts: {
-            $size: '$uniqueCodes'
-          }
-        }
-      },
-    ])
+    .aggregate(aggregationConfig)
     .toArray()
     .then((stats) => {
       db.close();
@@ -184,16 +164,110 @@ exports.saveMonitoringData = (gameId, entries) => {
 exports.getTotalGameMonitoring = (gameId) => {
   const GameId = parseInt(gameId, 10);
 
-  const totalCodesRequest = { GameId };
-  const correctCodesRequest = {
-    $and: [
-      { GameId: { $eq: GameId } },
-      { isSuccess: true },
-      { isTimeout: false },
-      { isRemovedLevel: false }
-    ]
-  };
+  const aggregationSettings = [
+    {
+      $group: {
+        _id: {
+          teamId: '$teamId',
+          teamName: '$teamName',
+        },
+        uniqueCodes: {
+          $addToSet: '$code'
+        }
+      }
+    },
+    {
+      $project: {
+        codesCounts: {
+          $size: '$uniqueCodes'
+        }
+      }
+    },
+  ];
 
+  const totalCodesRequest = [
+    { $match: { GameId } },
+    ...aggregationSettings
+  ];
+  const correctCodesRequest = [
+    {
+      $match: {
+        $and: [
+          { GameId: { $eq: GameId } },
+          { isSuccess: true },
+          { isTimeout: false },
+          { isRemovedLevel: false }
+        ]
+      }
+    },
+    ...aggregationSettings
+  ];
+
+  return Promise.all([
+    getAggregatedMonitoring(totalCodesRequest),
+    getAggregatedMonitoring(correctCodesRequest)
+  ]);
+};
+
+exports.getMonitoringByDetails = (GameId, teamId, groupingType) => {
+  let groupSettings;
+  let sortSettings;
+  switch (groupingType) {
+    case 'player':
+      groupSettings = {
+        userName: '$userName',
+        userId: '$userId'
+      };
+      sortSettings = { codesCounts: -1 };
+      break;
+    case 'level':
+    default:
+      groupSettings = {
+        level: '$level',
+      };
+      sortSettings = { '_id.level': 1 };
+      break;
+  }
+
+  const aggregationSettings = [
+    {
+      $group: {
+        _id: groupSettings,
+        uniqueCodes: {
+          $addToSet: '$code'
+        }
+      }
+    },
+    {
+      $project: {
+        codesCounts: {
+          $size: '$uniqueCodes'
+        }
+      }
+    },
+    {
+      $sort: sortSettings
+    }
+  ];
+
+  const totalCodesRequest = [
+    { $match: { GameId, teamId } },
+    ...aggregationSettings
+  ];
+  const correctCodesRequest = [
+    {
+      $match: {
+        $and: [
+          { GameId: { $eq: GameId } },
+          { teamId: { $eq: teamId } },
+          { isSuccess: true },
+          { isTimeout: false },
+          { isRemovedLevel: false }
+        ]
+      }
+    },
+    ...aggregationSettings
+  ];
   return Promise.all([
     getAggregatedMonitoring(totalCodesRequest),
     getAggregatedMonitoring(correctCodesRequest)

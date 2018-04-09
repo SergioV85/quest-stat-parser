@@ -29,6 +29,10 @@ functions:
       EN_PASSWORD: ${ssm:EN_PASSWORD~true}
     events:
       - http: 'GET /game-monitoring'
+  monitoring-details:
+    handler: monitoring-details.handler
+    events:
+      - http: 'GET /game-monitoring-details'
 
 plugins:
   - serverless-offline
