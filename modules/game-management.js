@@ -1,8 +1,14 @@
 const R = require('ramda');
 const webstatConvertor = require('./webstat-convertor.js');
 const dbConnection = require('./database-connection.js');
+const timeParser = require('./parsers/time-parser');
 
 const getExistedLevelType = (key, oldLevelValue, newLevelValue) => (key === 'type' ? oldLevelValue : newLevelValue);
+const mapIndexed = R.addIndex(R.map);
+const reduceCodeArray = (idx, codes) => R.pipe(
+  R.drop(idx + 1),
+  R.map(R.prop('code'))
+)(codes);
 
 const saveNewGameToDb = (gameId, domain, existedLevelsData) => {
   const gameData = {
@@ -62,6 +68,66 @@ const mergeMonitoringData = ([totalInputs, correctCodes], propName) => ({
   )(totalInputs)
 });
 
+const markDuplicates = (codeList) =>
+  mapIndexed((code, idx) => {
+    const isDuplicate = R.pipe(
+      R.curry(reduceCodeArray)(idx),
+      R.contains(R.prop('code', code))
+    )(codeList);
+
+    return R.merge(code, { isDuplicate });
+  }, codeList);
+const calculateTimeDiffernce = (codeList) =>
+  mapIndexed((code, idx) => {
+    const prevCodeTime = R.pipe(
+      R.prop(idx + 1),
+      R.prop('time'),
+      timeParser.convertTime
+    )(codeList);
+    const currentCodeTime = timeParser.convertTime(code.time);
+    const timeDiff = R.isNil(prevCodeTime) ? null : timeParser.getDiff(currentCodeTime, prevCodeTime);
+
+    return R.merge(code, { timeDiff });
+  }, codeList);
+
+const getMonitoringDataByTeam = (gameId, teamId) => Promise.all([
+  dbConnection.getMonitoringByDetails(gameId, teamId, 'teamLevel')
+    .then((results) => mergeMonitoringData(results, 'level')),
+  dbConnection.getMonitoringByDetails(gameId, teamId, 'teamPlayer')
+    .then((results) => mergeMonitoringData(results, 'userId'))
+    .then(R.pipe(
+      R.prop('totalData'),
+      R.sort(
+        R.descend(
+          R.prop('correctCodesQuantity')
+        )
+      )
+    ))
+])
+.then(([dataByLevels, dataByUsers]) => ({
+  parsed: true,
+  dataByLevel: R.prop('totalData', dataByLevels),
+  dataByUser: dataByUsers,
+}));
+
+const getMonitoringDataByPlayer = (gameId, playerId) =>
+  dbConnection.getMonitoringByDetails(gameId, playerId, 'playerLevel')
+  .then((results) => mergeMonitoringData(results, 'level'));
+
+const getCodesByLevel = (GameId, level, teamId) =>
+  dbConnection.getMonitoringCodes({ GameId, teamId, level, type: 'level' })
+    .then(R.pipe(
+      markDuplicates,
+      calculateTimeDiffernce
+    ));
+
+const getCodesByPlayer = (GameId, level, userId) =>
+  dbConnection.getMonitoringCodes({ GameId, userId, level, type: 'player' })
+    .then(R.pipe(
+      markDuplicates,
+      calculateTimeDiffernce
+    ));
+
 exports.getSavedGames = () => dbConnection.getSavedGames();
 
 exports.getGameData = ({ gameId, domain, isForceRefresh }) => dbConnection.getGameInfo(gameId)
@@ -97,33 +163,22 @@ exports.getMonitoringData = ({ gameId, domain }) => dbConnection.getMonitoringSt
     return webstatConvertor.retrieveGameMonitoring(domain, gameId);
   });
 
-exports.getMonitoringDetails = (({ gameId, teamId, detailsType }) => {
-  let firstGroupOperator;
-  let secondGroupOperator;
-
+exports.getMonitoringDetails = (({ gameId, teamId, playerId, detailsType }) => {
   switch (detailsType) {
+    case 'byPlayer':
+      return getMonitoringDataByPlayer(gameId, playerId);
     case 'byTeam':
     default:
-      firstGroupOperator = 'level';
-      secondGroupOperator = 'player';
+      return getMonitoringDataByTeam(gameId, teamId);
   }
+});
 
-  return Promise.all([
-    dbConnection.getMonitoringByDetails(gameId, teamId, firstGroupOperator)
-      .then((results) => mergeMonitoringData(results, 'level')),
-    dbConnection.getMonitoringByDetails(gameId, teamId, secondGroupOperator)
-      .then((results) => mergeMonitoringData(results, 'userId'))
-      .then(R.pipe(
-        R.prop('totalData'),
-        R.sort(
-          R.descend(
-            R.prop('correctCodesQuantity')
-          )
-        )
-      ))
-  ]).then(([dataByLevels, dataByUsers]) => ({
-    parsed: true,
-    dataByLevel: R.prop('totalData', dataByLevels),
-    dataByUser: dataByUsers,
-  }));
+exports.getMonitoringCodes = (({ gameId, levelId, playerId, teamId, detailsType }) => {
+  switch (detailsType) {
+    case 'byLevel':
+      return getCodesByLevel(gameId, levelId, teamId);
+    case 'byPlayer':
+    default:
+      return getCodesByPlayer(gameId, levelId, playerId);
+  }
 });

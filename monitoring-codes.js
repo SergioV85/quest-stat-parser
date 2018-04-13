@@ -6,12 +6,9 @@ exports.handler = (event, context, callback) => {
     R.path(['queryStringParameters', 'gameId']),
     parseInt
   )(event);
-  const teamId = R.pipe(
-    R.path(['queryStringParameters', 'teamId']),
-    R.unless(
-      R.isNil,
-      parseInt
-    )
+  const levelId = R.pipe(
+    R.path(['queryStringParameters', 'levelId']),
+    parseInt
   )(event);
   const playerId = R.pipe(
     R.path(['queryStringParameters', 'playerId']),
@@ -20,7 +17,14 @@ exports.handler = (event, context, callback) => {
       parseInt
     )
   )(event);
-  const detailsType = R.path(['queryStringParameters', 'detailsLevel'], event);
+  const teamId = R.pipe(
+    R.path(['queryStringParameters', 'teamId']),
+    R.unless(
+      R.isNil,
+      parseInt
+    )
+  )(event);
+  const detailsType = R.path(['queryStringParameters', 'type'], event);
 
   if (R.isNil(gameId)) {
     callback({
@@ -28,7 +32,7 @@ exports.handler = (event, context, callback) => {
       body: 'Bad Request'
     });
   }
-  gameManagement.getMonitoringDetails({ gameId, teamId, playerId, detailsType })
+  gameManagement.getMonitoringCodes({ gameId, playerId, levelId, teamId, detailsType })
     .then((gameData) => {
       callback(null, {
         statusCode: '200',

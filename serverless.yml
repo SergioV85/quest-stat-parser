@@ -33,6 +33,14 @@ functions:
     handler: monitoring-details.handler
     events:
       - http: 'GET /game-monitoring-details'
+  monitoring-codes:
+    handler: monitoring-codes.handler
+    events:
+      - http: 'GET /game-monitoring-codes-list'
 
 plugins:
   - serverless-offline
+
+custom:
+  serverless-offline:
+    dontPrintOutput: true

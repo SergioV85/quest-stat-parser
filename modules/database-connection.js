@@ -51,6 +51,18 @@ const getAggregatedMonitoring = (aggregationConfig) => MongoClient.connect(uri)
     })
   );
 
+const getCodesList = (query) => MongoClient.connect(uri)
+.then((db) => db
+  .db('quest')
+  .collection('Monitoring')
+  .find(query)
+  .toArray()
+  .then((codes) => {
+    db.close();
+    return codes;
+  })
+);
+
 exports.getSavedGames = () => MongoClient
   .connect(uri)
   .then((db) => db
@@ -209,21 +221,37 @@ exports.getTotalGameMonitoring = (gameId) => {
   ]);
 };
 
-exports.getMonitoringByDetails = (GameId, teamId, groupingType) => {
+exports.getMonitoringByDetails = (GameId, uniqueId, groupingType) => {
+  let totalMatchSettings;
+  let correctMatchSettings;
   let groupSettings;
   let sortSettings;
   switch (groupingType) {
-    case 'player':
+    case 'playerLevel':
+      totalMatchSettings = { GameId, userId: uniqueId };
+      correctMatchSettings = { userId: { $eq: uniqueId } };
+      groupSettings = {
+        level: '$level',
+        userId: '$userId',
+      };
+      sortSettings = { '_id.level': 1 };
+      break;
+    case 'teamPlayer':
+      totalMatchSettings = { GameId, teamId: uniqueId };
+      correctMatchSettings = { teamId: { $eq: uniqueId } };
       groupSettings = {
         userName: '$userName',
         userId: '$userId'
       };
       sortSettings = { codesCounts: -1 };
       break;
-    case 'level':
+    case 'teamLevel':
     default:
+      totalMatchSettings = { GameId, teamId: uniqueId };
+      correctMatchSettings = { teamId: { $eq: uniqueId } };
       groupSettings = {
         level: '$level',
+        teamId: '$teamId',
       };
       sortSettings = { '_id.level': 1 };
       break;
@@ -251,7 +279,7 @@ exports.getMonitoringByDetails = (GameId, teamId, groupingType) => {
   ];
 
   const totalCodesRequest = [
-    { $match: { GameId, teamId } },
+    { $match: totalMatchSettings },
     ...aggregationSettings
   ];
   const correctCodesRequest = [
@@ -259,7 +287,7 @@ exports.getMonitoringByDetails = (GameId, teamId, groupingType) => {
       $match: {
         $and: [
           { GameId: { $eq: GameId } },
-          { teamId: { $eq: teamId } },
+          correctMatchSettings,
           { isSuccess: true },
           { isTimeout: false },
           { isRemovedLevel: false }
@@ -272,4 +300,9 @@ exports.getMonitoringByDetails = (GameId, teamId, groupingType) => {
     getAggregatedMonitoring(totalCodesRequest),
     getAggregatedMonitoring(correctCodesRequest)
   ]);
+};
+
+exports.getMonitoringCodes = ({ GameId, teamId, userId, level, type }) => {
+  const query = type === 'level' ? { GameId, teamId, level } : { GameId, userId, level };
+  return getCodesList(query);
 };
