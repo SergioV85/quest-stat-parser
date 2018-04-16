@@ -4,8 +4,5 @@ const databaseConnection = require('./../modules/database-connection');
 const expect = chai.expect;
 
 describe('Database Connection Module', () => {
-  describe('getAllSavedGames', () => {});
-  describe('updateLevelsInDatabase', () => {});
-  describe('getGameFromDb', () => {});
   describe('saveGameToDb', () => {});
 });

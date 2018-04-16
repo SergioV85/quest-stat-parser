@@ -7,7 +7,6 @@ exports.handler = (event, context, callback) => {
     parseInt
   )(event);
   const domain = R.path(['queryStringParameters', 'domain'], event);
-  const isForceRefresh = R.pathOr(false, ['queryStringParameters', 'force'], event);
 
   if (R.isNil(gameId) || R.isNil(domain)) {
     callback({
@@ -15,7 +14,7 @@ exports.handler = (event, context, callback) => {
       body: 'Bad Request'
     });
   }
-  gameManagement.getGameData({ gameId, domain, isForceRefresh })
+  gameManagement.getMonitoringData({ gameId, domain })
     .then((gameData) => {
       callback(null, {
         statusCode: '200',
