@@ -35,6 +35,6 @@
     "mocha": "^4.0.1",
     "nodemon": "^1.11.0",
     "nyc": "^11.2.1",
-    "serverless-offline": "^3.18.0"
+    "serverless-offline": "^3.20.1"
   }
 }
