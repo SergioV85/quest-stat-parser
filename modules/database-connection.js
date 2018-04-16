@@ -139,11 +139,10 @@ exports.updateLevels = (gameId, levelData) => {
 
 exports.setMonitoringStatus = (gameId, status) => {
   const GameId = parseInt(gameId, 10);
-  const doc = {
+  const doc = R.merge(status, {
     _id: GameId,
-    GameId,
-    ...status
-  };
+    GameId
+  });
   return MongoClient.connect(uri)
     .then((db) => db
       .db('quest')
@@ -197,24 +196,25 @@ exports.getTotalGameMonitoring = (gameId) => {
     },
   ];
 
-  const totalCodesRequest = [
-    { $match: { GameId } },
-    ...aggregationSettings
-  ];
-  const correctCodesRequest = [
-    {
-      $match: {
-        $and: [
-          { GameId: { $eq: GameId } },
-          { isSuccess: true },
-          { isTimeout: false },
-          { isRemovedLevel: false }
-        ]
+  const totalCodesRequest = R.concat(
+    [{ $match: { GameId } }],
+    aggregationSettings
+  );
+  const correctCodesRequest = R.concat(
+    [
+      {
+        $match: {
+          $and: [
+            { GameId: { $eq: GameId } },
+            { isSuccess: true },
+            { isTimeout: false },
+            { isRemovedLevel: false }
+          ]
+        }
       }
-    },
-    ...aggregationSettings
-  ];
-
+    ],
+    aggregationSettings
+  );
   return Promise.all([
     getAggregatedMonitoring(totalCodesRequest),
     getAggregatedMonitoring(correctCodesRequest)
@@ -278,24 +278,27 @@ exports.getMonitoringByDetails = (GameId, uniqueId, groupingType) => {
     }
   ];
 
-  const totalCodesRequest = [
-    { $match: totalMatchSettings },
-    ...aggregationSettings
-  ];
-  const correctCodesRequest = [
-    {
-      $match: {
-        $and: [
-          { GameId: { $eq: GameId } },
-          correctMatchSettings,
-          { isSuccess: true },
-          { isTimeout: false },
-          { isRemovedLevel: false }
-        ]
+  const totalCodesRequest = R.concat(
+    [{ $match: totalMatchSettings }],
+    aggregationSettings
+  );
+
+  const correctCodesRequest = R.concat(
+    [
+      {
+        $match: {
+          $and: [
+            { GameId: { $eq: GameId } },
+            correctMatchSettings,
+            { isSuccess: true },
+            { isTimeout: false },
+            { isRemovedLevel: false }
+          ]
+        }
       }
-    },
-    ...aggregationSettings
-  ];
+    ],
+    aggregationSettings
+  );
   return Promise.all([
     getAggregatedMonitoring(totalCodesRequest),
     getAggregatedMonitoring(correctCodesRequest)
@@ -306,3 +309,13 @@ exports.getMonitoringCodes = ({ GameId, teamId, userId, level, type }) => {
   const query = type === 'level' ? { GameId, teamId, level } : { GameId, userId, level };
   return getCodesList(query);
 };
+
+exports.cleanCodesFromNotFullyParsedGame = (GameId) => MongoClient.connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection('Monitoring')
+    .deleteMany({ GameId })
+    .then(() => {
+      db.close();
+    })
+  );

@@ -160,7 +160,8 @@ exports.getMonitoringData = ({ gameId, domain }) => dbConnection.getMonitoringSt
       }
       return data;
     }
-    return webstatConvertor.retrieveGameMonitoring(domain, gameId);
+    return dbConnection.cleanCodesFromNotFullyParsedGame(gameId)
+      .then(() => webstatConvertor.retrieveGameMonitoring(domain, gameId));
   });
 
 exports.getMonitoringDetails = (({ gameId, teamId, playerId, detailsType }) => {

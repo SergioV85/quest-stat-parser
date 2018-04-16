@@ -2,7 +2,7 @@ service: quest-server-parser
 
 provider:
   name: aws
-  runtime: nodejs6.10
+  runtime: nodejs8.10
   region: eu-central-1
   stage: prod
   environment:
@@ -24,6 +24,7 @@ functions:
       - http: 'PUT /games/{proxy+}'
   monitoring:
     handler: monitoring.handler
+    timeout: 5
     environment:
       EN_LOGIN: ${ssm:EN_LOGIN}
       EN_PASSWORD: ${ssm:EN_PASSWORD~true}
@@ -35,6 +36,7 @@ functions:
       - http: 'GET /game-monitoring-details'
   monitoring-codes:
     handler: monitoring-codes.handler
+    timeout: 60
     events:
       - http: 'GET /game-monitoring-codes-list'
 
