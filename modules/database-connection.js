@@ -309,3 +309,13 @@ exports.getMonitoringCodes = ({ GameId, teamId, userId, level, type }) => {
   const query = type === 'level' ? { GameId, teamId, level } : { GameId, userId, level };
   return getCodesList(query);
 };
+
+exports.cleanCodesFromNotFullyParsedGame = (GameId) => MongoClient.connect(uri)
+  .then((db) => db
+    .db('quest')
+    .collection('Monitoring')
+    .deleteMany({ GameId })
+    .then(() => {
+      db.close();
+    })
+  );
