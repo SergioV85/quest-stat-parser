@@ -1,7 +1,7 @@
 const R = require('ramda');
 const he = require('he');
 
-const filterEmptyAndObsoleteValues = (column) => R.pipe(
+const filterEmptyAndObsoleteValues = R.pipe(
   R.reject(
     R.anyPass([
       R.isNil,
@@ -10,51 +10,51 @@ const filterEmptyAndObsoleteValues = (column) => R.pipe(
     ])
   ),
   R.drop(1)
-)(column);
+);
 
-const getTeamName = (string) => R.pipe(
+const getTeamName = R.pipe(
   he.decode,
   R.match(/>.*?</g),
   R.head,
   R.slice(1, -1)
-)(string);
-const getTeamId = (string) => R.pipe(
+);
+const getTeamId = R.pipe(
   R.match(/tid=\d*/g),
   R.head,
   R.replace('tid=', ''),
   parseInt
-)(string);
-const getUserName = (string) => R.pipe(
+);
+const getUserName = R.pipe(
   he.decode,
   R.match(/>.*?</g),
   R.last,
   R.slice(1, -1)
-)(string);
-const getUserId = (string) => R.pipe(
+);
+const getUserId = R.pipe(
   R.match(/uid=\d*/g),
   R.head,
   R.replace('uid=', ''),
   parseInt
-)(string);
-const getAnswerType = (string) => R.pipe(
+);
+const getAnswerType = R.pipe(
   he.decode,
   R.match(/>.*?</g),
   R.head,
   R.slice(1, -1),
   R.equals('в')
-)(string);
-const getCode = (string) => R.pipe(
+);
+const getCode = R.pipe(
   he.decode,
   R.replace(/<.*?>/g, '')
-)(string);
-const isTimeout = (string) => R.pipe(
+);
+const isTimeout = R.pipe(
   getCode,
   R.test(/таймауту/g)
-)(string);
-const isRemoved = (string) => R.pipe(
+);
+const isRemoved = R.pipe(
   getCode,
   R.test(/Уровень снят/g)
-)(string);
+);
 
 const convertToEntry = ([levelNumber, teamAndUser, answerStatus, code, time]) => ({
   level: parseInt(levelNumber, 10),
@@ -63,8 +63,10 @@ const convertToEntry = ([levelNumber, teamAndUser, answerStatus, code, time]) =>
   userName: getUserName(teamAndUser),
   userId: getUserId(teamAndUser),
   isSuccess: getAnswerType(answerStatus),
-  code: getCode(code),
-  time: he.decode(time),
+  // Can be situation, when code is empty and was dropped on previous stage.
+  // In such case, time entry shifted to code position
+  code: R.isNil(time) ? '' : getCode(code),
+  time: R.isNil(time) ? he.decode(code) : he.decode(time),
   isTimeout: isTimeout(code),
   isRemovedLevel: isRemoved(code)
 });

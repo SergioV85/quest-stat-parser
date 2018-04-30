@@ -24,7 +24,6 @@ functions:
       - http: 'PUT /games/{proxy+}'
   monitoring:
     handler: monitoring.handler
-    timeout: 5
     environment:
       EN_LOGIN: ${ssm:EN_LOGIN}
       EN_PASSWORD: ${ssm:EN_PASSWORD~true}
