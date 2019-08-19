@@ -1,0 +1,7 @@
+organization=sergiov85-github
+projectKey=SergioV85_quest-stat-parser
+serverUrl=https://sonarcloud.io
+serverVersion=7.8.0.24676
+dashboardUrl=https://sonarcloud.io/dashboard?id=SergioV85_quest-stat-parser
+ceTaskId=AWq2QkDYcMoWyatDOvs0
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AWq2QkDYcMoWyatDOvs0
