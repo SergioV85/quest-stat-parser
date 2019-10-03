@@ -1,0 +1,9 @@
+{
+    "sonarlint.connectedMode.project": {
+        "serverId": "QuestStat",
+        "projectKey": "SergioV85_quest-stat-parser"
+    },
+    "cSpell.words": [
+        "parsetable"
+    ]
+}

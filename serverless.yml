@@ -2,7 +2,7 @@ service: quest-server-parser
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.x
   region: eu-central-1
   stage: prod
   environment:
@@ -11,15 +11,15 @@ provider:
 
 functions:
   getGames:
-    handler: get-games.handler
+    handler: get-games.gamesHandler
     events:
       - http: 'GET /games'
   getGameDetails:
-    handler: get-game-data.handler
+    handler: get-game-data.gameDetailsHandler
     events:
       - http: 'GET /game'
   updateGame:
-    handler: update-levels.handler
+    handler: update-levels.updateLevelsHandler
     events:
       - http: 'PUT /games/{proxy+}'
   monitoring:
@@ -30,16 +30,16 @@ functions:
     events:
       - http: 'GET /game-monitoring'
   monitoring-details:
-    handler: monitoring-details.handler
+    handler: monitoring-details.monitoringHandler
     events:
       - http: 'GET /game-monitoring-details'
   monitoring-codes:
-    handler: monitoring-codes.handler
-    timeout: 60
+    handler: monitoring-codes.monitoringCodesHandler
     events:
       - http: 'GET /game-monitoring-codes-list'
 
 plugins:
+  - serverless-plugin-typescript
   - serverless-offline
 
 custom:
