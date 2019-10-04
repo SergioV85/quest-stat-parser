@@ -11,30 +11,30 @@ provider:
 
 functions:
   getGames:
-    handler: get-games.gamesHandler
+    handler: src/routes/get-games.gamesHandler
     events:
       - http: 'GET /games'
   getGameDetails:
-    handler: get-game-data.gameDetailsHandler
+    handler: src/routes/get-game-data.gameDetailsHandler
     events:
       - http: 'GET /game'
   updateGame:
-    handler: update-levels.updateLevelsHandler
+    handler: src/routes/update-levels.updateLevelsHandler
     events:
       - http: 'PUT /games/{proxy+}'
   monitoring:
-    handler: monitoring.handler
+    handler: src/routes/monitoring.handler
     environment:
       EN_LOGIN: ${ssm:EN_LOGIN}
       EN_PASSWORD: ${ssm:EN_PASSWORD~true}
     events:
       - http: 'GET /game-monitoring'
   monitoring-details:
-    handler: monitoring-details.monitoringHandler
+    handler: src/routes/monitoring-details.monitoringHandler
     events:
       - http: 'GET /game-monitoring-details'
   monitoring-codes:
-    handler: monitoring-codes.monitoringCodesHandler
+    handler: src/routes/monitoring-codes.monitoringCodesHandler
     events:
       - http: 'GET /game-monitoring-codes-list'
 
