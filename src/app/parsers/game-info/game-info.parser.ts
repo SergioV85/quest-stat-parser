@@ -1,4 +1,4 @@
-import { pipe, find, test, match, head, slice, replace, last, split, take, join, map } from 'ramda';
+import { pipe, find, test, match, head, slice, replace, last, map } from 'ramda';
 import { decode } from 'he';
 import { convertTime } from './../time/time.parser';
 
@@ -8,6 +8,8 @@ const convertTimeZone = (n: number) => {
 };
 
 const parseGameInfo = (row: string[]) => {
+  const timeRegExp = new RegExp(/(\d{2}\.\d{2}\.\d{4}\s\d{1,2}\:\d{2}:\d{2})/);
+
   const name: string = pipe(
     find(test(/lnkGameTitle/)),
     match(/gid=\d{1,10}">.*<\/a>/g),
@@ -28,22 +30,14 @@ const parseGameInfo = (row: string[]) => {
 
   const start: string = pipe(
     find(test(/Начало игры/)),
-    replace(/<.*?>/g, ''),
-    split(' '),
-    take(3),
-    join(' '),
-    split(/\t/g),
-    last,
+    match(timeRegExp),
+    head,
   )(row);
 
   const finish: string = pipe(
     find(test(/Время окончания/)),
-    replace(/<.*?>/g, ''),
-    split(' '),
-    take(3),
-    join(' '),
-    split(/\t/g),
-    last,
+    match(timeRegExp),
+    head,
   )(row);
 
   const startStringWithTimeZone = `${start}${timezone}`;

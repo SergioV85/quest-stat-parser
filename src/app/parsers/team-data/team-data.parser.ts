@@ -58,7 +58,7 @@ const getCorrectTimeFromString = (type: AllowedTimeSymbols, strArray: string[]):
   )(strArray);
 
 const convertStringToTime = (strArray: string[]): number => {
-  const days = includes('д', strArray) ? getCorrectTimeFromString('д', strArray) : 0;
+  const days = includes('д', strArray) ? getCorrectTimeFromString('д', strArray) + 1 : 1;
   const hours = includes('ч', strArray) ? getCorrectTimeFromString('ч', strArray) : 0;
   const minutes = includes('м', strArray) ? getCorrectTimeFromString('м', strArray) : 0;
   const seconds = includes('с', strArray) ? getCorrectTimeFromString('с', strArray) : 0;
