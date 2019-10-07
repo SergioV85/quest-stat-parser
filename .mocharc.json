@@ -1,0 +1,8 @@
+{
+  "extension": ["ts"],
+  "opts": false,
+  "package": "./package.json",
+  "reporter": "spec",
+  "spec": "./src/**/*.test.ts",
+  "require": "ts-node/register"
+}
