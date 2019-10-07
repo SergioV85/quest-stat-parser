@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { getSavedGames } from './../app/controllers/game-management';
+import { getSavedGames } from './../app/controllers/game-management/game-management';
 
 export const gamesHandler: APIGatewayProxyHandler = async () =>
   getSavedGames()

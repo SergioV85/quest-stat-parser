@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { path, pipe, prop } from 'ramda';
-import { updateLevelData } from './../app/controllers/game-management';
+import { updateLevelData } from './../app/controllers/game-management/game-management';
 
 export const updateLevelsHandler: APIGatewayProxyHandler = async event => {
   const gameId = pipe(
