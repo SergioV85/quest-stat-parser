@@ -5,13 +5,14 @@ phases:
     runtime-versions:
       nodejs: 10
     commands:
-      - echo Installing source NPM dependencies...
+      - echo Installing NPM dependencies
       - npm install
+      - echo Installing Serverless framework
       - npm install serverless -g
   build:
     commands:
       - echo Build and deploy the app
-      - serverless deploy
+      - SLS_DEBUG=1 serverless deploy
   post_build:
     commands:
       - echo App deployed to AWS Lambda
