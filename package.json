@@ -8,8 +8,10 @@
   },
   "scripts": {
     "compile": "tsc --declaration",
+    "deploy": "serverless deploy",
     "test": "mocha",
     "test:coverage": "nyc --reporter=html --reporter=text mocha test/",
+    "start:local": "serverless offline",
     "start:server": "http-server",
     "prettier": "prettier --config ./.prettierrc --list-different \"./src/**/*.{ts,js,json}\"",
     "precommit": "npm run prettier && npm run lint",
