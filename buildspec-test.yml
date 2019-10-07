@@ -1,0 +1,23 @@
+# Do not change version. This is the version of aws buildspec, not the version of your buldspec file.
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+      java: openjdk8
+    commands:
+      - echo Installing node.js dependencies
+      - npm install
+      - echo Installing SonarQube Scanner
+      - npm install -g sonarqube-scanner
+  build:
+    commands:
+      - echo Testing the app
+      - npm run test:ci
+      - echo Test completed
+  post_build:
+    commands:
+      - echo Run the Sonar Scanner
+      - sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=SergioV85_quest-stat-parser -Dsonar.organization=sergiov85-github -Dsonar.login=cadf48ea2109f89a9d383435e4e5244e060fabf4 -Dsonar.sources=src -Dsonar.tests=src -Dsonar.test.inclusions="**/*.test.ts" -Dsonar.exclusions="node_modules/**, coverage/**, webpack.config.js, src/**/*.mock.*, *.js" -Dsonar.typescript.tsconfigPath=tsconfig.json -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info -Dsonar.sourceEncoding=UTF-8
+      - echo Scan completed

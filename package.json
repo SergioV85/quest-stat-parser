@@ -11,11 +11,13 @@
     "deploy": "serverless deploy",
     "test": "mocha",
     "test:coverage": "nyc --reporter=html --reporter=text mocha",
+    "test:ci": "nyc mocha && npm run prepare-code-coverage-report",
     "start:local": "serverless offline",
     "start:server": "http-server",
     "prettier": "prettier --config ./.prettierrc --list-different \"./src/**/*.{ts,js,json}\"",
     "precommit": "npm run prettier && npm run lint",
-    "lint": "./node_modules/.bin/tslint -c tslint.json -p tsconfig.json"
+    "lint": "./node_modules/.bin/tslint -c tslint.json -p tsconfig.json",
+    "prepare-code-coverage-report": "replace '...*src' 'SF:./src' coverage/lcov.info"
   },
   "author": "Serhii Vozniak",
   "license": "MIT",
@@ -59,6 +61,7 @@
     "nodemon": "^1.11.0",
     "nyc": "^14.1.1",
     "prettier": "^1.18.2",
+    "replace": "^1.1.1",
     "serverless-offline": "^5.7.1",
     "serverless-plugin-typescript": "^1.1.9",
     "serverless-webpack": "^5.3.1",
