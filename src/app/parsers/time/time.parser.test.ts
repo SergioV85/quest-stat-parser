@@ -7,17 +7,20 @@ describe('Time Parser', () => {
     it('should return parsed date (with double hours) as JS Date', () => {
       const timeZoneDiff = new Date(2019, 4, 24, 21, 16, 0).getTimezoneOffset() / 60 + GAME_TIME_ZONE;
       const expectedHours = 21 - timeZoneDiff;
-      expect(parseTime('24.05.2019 21:16:00+03:00')).to.eql(new Date(2019, 4, 24, expectedHours, 16, 0));
+      expect(parseTime('24.05.2019 21:16:00.000+03:00')).to.eql(new Date(2019, 4, 24, expectedHours, 16, 0));
     });
     it('should return parsed date (with single hours) as JS Date', () => {
       const timeZoneDiff = new Date(2019, 4, 25, 3, 0, 0).getTimezoneOffset() / 60 + GAME_TIME_ZONE;
       const expectedHours = 3 - timeZoneDiff;
-      expect(parseTime('25.05.2019 3:00:00+03:00')).to.eql(new Date(2019, 4, 25, expectedHours, 0, 0));
+      expect(parseTime('25.05.2019 3:00:00.000+03:00')).to.eql(new Date(2019, 4, 25, expectedHours, 0, 0));
     });
   });
   describe('convertTime', () => {
     it('should return parsed date as ISO string', () => {
-      expect(convertTime('24.05.2019 21:16:00+03:00')).to.eql(`2019-05-24T18:16:00.000Z`);
+      expect(convertTime('24.05.2019 21:16:00.000+03:00')).to.eql(`2019-05-24T18:16:00.000Z`);
+    });
+    it('should return parsed date as ISO string', () => {
+      expect(convertTime('24.05.2019 21:19:35.547+03:00')).to.eql(`2019-05-24T18:19:35.547Z`);
     });
   });
   describe('getDiff', () => {

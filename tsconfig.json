@@ -16,7 +16,8 @@
     "outDir": ".build",
     "typeRoots": [
       "node_modules/@types",
-      "src/typings"
+      "./typings",
+      "./src/typings"
     ],
     "skipLibCheck": true,
     "rootDir": "./"

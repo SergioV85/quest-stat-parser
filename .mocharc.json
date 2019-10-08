@@ -3,6 +3,5 @@
   "opts": false,
   "package": "./package.json",
   "reporter": "spec",
-  "spec": "./src/**/*.test.ts",
-  "require": "ts-node/register"
+  "spec": "./src/**/*.test.ts"
 }

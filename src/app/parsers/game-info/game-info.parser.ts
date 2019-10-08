@@ -40,8 +40,8 @@ const parseGameInfo = (row: string[]) => {
     head,
   )(row);
 
-  const startStringWithTimeZone = `${start}${timezone}`;
-  const finishStringWithTimeZone = `${finish}${timezone}`;
+  const startStringWithTimeZone = `${start}.000${timezone}`;
+  const finishStringWithTimeZone = `${finish}.000${timezone}`;
 
   return {
     start: convertTime(startStringWithTimeZone),

@@ -49,14 +49,12 @@ const parseGameStat = ($: CheerioStatic, gameInfo: ParsedGameData): ParsedGameSt
   };
 };
 
-const parseMonitoringInfo = ($: CheerioStatic) => {
-  const lastPage = $('form')
+const parseMonitoringInfo = ($: CheerioStatic) =>
+  $('form')
     .siblings('div')
     .children('a')
     .last()
     .text();
-  return lastPage;
-};
 
 const parseMonitoringData = ($: CheerioStatic) => {
   cheerioTableparser($);

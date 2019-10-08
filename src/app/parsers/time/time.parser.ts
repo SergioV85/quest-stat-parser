@@ -1,6 +1,6 @@
 import { parse, differenceInMilliseconds } from 'date-fns';
 
-export const parseTime = (str: string) => parse(str, 'd.M.yyyy H:mm:ssXXXXX', new Date());
+export const parseTime = (str: string) => parse(str, 'd.M.yyyy H:mm:ss.SSSXXXXX', new Date());
 export const convertTime = (str: string) => parseTime(str).toISOString();
 export const getDiff = (currTime: Date, oldTime: Date): number => differenceInMilliseconds(currTime, oldTime);
 export const convertStringDuration = (str: string): number => {

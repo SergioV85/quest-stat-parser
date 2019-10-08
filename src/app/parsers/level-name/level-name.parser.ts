@@ -36,6 +36,15 @@ const checkLevelType = (str: string): number => {
   if (anyPass([test(/заглушка/giu), test(/бриф/giu)])(str)) {
     return 5;
   }
+  if (anyPass([test(/добег/giu), test(/добіг/giu)])(str)) {
+    return 7;
+  }
+  if (anyPass([test(/ралл/giu), test(/ралі/giu)])(str)) {
+    return 8;
+  }
+  if (anyPass([test(/ракет/giu)])(str)) {
+    return 10;
+  }
   return 0;
 };
 

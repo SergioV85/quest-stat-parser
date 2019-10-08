@@ -224,11 +224,12 @@ export const getMonitoringDetails = ({ gameId, teamId, playerId, detailsType }: 
   if (teamId) {
     return getMonitoringDataByTeam(gameId, teamId);
   }
+  return null;
 };
 
 export const getMonitoringCodes = ({ gameId, levelId, playerId, teamId, detailsType }: DetailedMonitoringRequest) => {
   if (!levelId) {
-    return;
+    return null;
   }
   if (detailsType === 'byLevel' && teamId) {
     return getCodesByLevel(gameId, levelId, teamId);
@@ -236,4 +237,5 @@ export const getMonitoringCodes = ({ gameId, levelId, playerId, teamId, detailsT
   if (playerId) {
     return getCodesByPlayer(gameId, levelId, playerId);
   }
+  return null;
 };
