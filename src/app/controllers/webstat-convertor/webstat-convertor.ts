@@ -1,5 +1,5 @@
 import { load } from 'cheerio';
-import cheerioTableparser from 'cheerio-tableparser';
+import * as cheerioTableparser from 'cheerio-tableparser';
 import * as request from 'request-promise';
 import { slice, isNil, merge } from 'ramda';
 import { timesSeries } from 'async';
