@@ -1,11 +1,9 @@
 import {
-  addIndex,
   anyPass,
-  curry,
   head,
   isEmpty,
   join,
-  map,
+  mapObjIndexed,
   partition,
   pathOr,
   pipe,
@@ -15,10 +13,13 @@ import {
   tail,
   test,
   trim,
+  values,
   when,
 } from 'ramda';
 import { decode } from 'he';
-import { LevelData } from '../../../models';
+import { LevelData, UnaryOperator } from '../../../models';
+
+const indexedMap = (func: (val: string[], key: string, obj?: unknown) => unknown) => pipe(mapObjIndexed(func), values);
 
 const checkLevelType = (str: string): number => {
   if (anyPass([test(/поиск/giu), test(/пошук/giu)])(str)) {
@@ -54,10 +55,7 @@ const checkLevelName = (str: string): string | number => {
 };
 
 const convertNameStringToObject = (index: number, strArray: string[]): LevelData => ({
-  level: pipe(
-    head,
-    checkLevelName,
-  )(strArray),
+  level: pipe(head, checkLevelName)(strArray),
   name: pipe(
     tail,
     join(' '),
@@ -67,35 +65,25 @@ const convertNameStringToObject = (index: number, strArray: string[]): LevelData
     when(isEmpty, () => 'Итоговое время'),
   )(strArray),
   position: index,
-  type: pipe(
-    join(' '),
-    checkLevelType,
-  )(strArray),
-  removed: pipe(
-    join(' '),
-    test(/dismissed/g),
-  )(strArray),
+  type: pipe(join(' '), checkLevelType)(strArray),
+  removed: pipe(join(' '), test(/dismissed/g))(strArray),
 });
 
-const parseLevelName = (index: number, name: string) =>
-  pipe(
-    decode,
-    split(':'),
-    curry(convertNameStringToObject)(index),
-  )(name);
+const parseLevelName = (index: number, name: string): LevelData =>
+  pipe(decode, split(':'), (data: string[]): LevelData => convertNameStringToObject(index, data))(name);
 
-const dropTwoFinishResults: (data: LevelData[]) => LevelData[] = pipe(
+const dropTwoFinishResults = pipe(
   partition(propSatisfies(isNaN, 'level')),
   ([finalStat, levelStat]: [LevelData[], LevelData[]]) => [...levelStat, head(finalStat)],
-);
+) as UnaryOperator<LevelData[], LevelData[]>;
 
-const getLevelData = (level: string[], index: number) =>
+const getLevelData = (level: string[], index: string): LevelData =>
   pipe(
-    pathOr('', [0]) as (data: string[]) => string,
-    curry(parseLevelName)(index),
+    pathOr('', [0]) as UnaryOperator<string[], string>,
+    (data: string): LevelData => parseLevelName(+index, data),
   )(level);
 
 export const getNames: (data: string[][]) => LevelData[] = pipe(
-  addIndex(map)(getLevelData),
+  (indexedMap(getLevelData) as unknown) as UnaryOperator<string[][], LevelData[]>,
   dropTwoFinishResults,
 );

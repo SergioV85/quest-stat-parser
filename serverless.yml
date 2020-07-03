@@ -2,9 +2,10 @@ service: quest-server-parser
 
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   region: eu-central-1
   stage: prod
+  profile: questStatUser
   environment:
     MONGO_ATLAS_User: ${ssm:Mongo_Atlas_Quest_user}
     MONGO_ATLAS_Password: ${ssm:Mongo_Atlas_Quest_pass~true}

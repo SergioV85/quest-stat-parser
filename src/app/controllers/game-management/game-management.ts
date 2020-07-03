@@ -1,15 +1,11 @@
 import {
-  addIndex,
   always,
   anyPass,
   applySpec,
-  curry,
   descend,
-  divide,
   drop,
   equals,
   find,
-  flip,
   ifElse,
   includes,
   isEmpty,
@@ -29,21 +25,28 @@ import {
   propOr,
   sort,
   zipWith,
+  mapObjIndexed,
+  values,
 } from 'ramda';
 import {
   CodeEntry,
   CodesRequestToDbType,
+  DetailedMonitoringRequest,
   GameData,
   GameInfo,
   GamePayload,
   GameRequest,
   LevelData,
   MonitoringResponse,
+  MonitoringTeamDetailedData,
   MonitoringTeamGroupedData,
   ParsedGameData,
   ParsedGameStat,
+  PlayerGroupedData,
   PlayerLevelData,
-  DetailedMonitoringRequest,
+  UnaryOperator,
+  MonitoringLevelData,
+  AggregatedMonitoringData,
 } from './../../../models';
 import { getDiff, parseTime } from './../../parsers';
 import {
@@ -61,20 +64,22 @@ import { getGameInfo, getGameStat, retrieveGameMonitoring } from './../webstat-c
 
 const getExistedLevelType = (key: string, oldLevelValue: number, newLevelValue: number) =>
   key === 'type' ? oldLevelValue : newLevelValue;
-// tslint:disable-next-line: no-any
-const mapIndexed = addIndex(map) as any;
-const reduceCodeArray: (idx: number) => (codes: CodeEntry[]) => string[] = (idx: number) =>
+
+const indexedMap = (func: (val: CodeEntry, key: string, obj?: unknown) => CodeEntry, list: CodeEntry[]): CodeEntry[] =>
   pipe(
-    drop(idx + 1),
-    pluck('code') as (data: CodeEntry[]) => string[],
-  );
+    (mapObjIndexed(func) as unknown) as UnaryOperator<CodeEntry[], { [key: string]: CodeEntry }>,
+    values as UnaryOperator<{ [key: string]: CodeEntry }, CodeEntry[]>,
+  )(list);
+
+const reduceCodeArray: (idx: number) => (codes: CodeEntry[]) => string[] = (idx: number) =>
+  pipe(drop(idx + 1), pluck('code') as (data: CodeEntry[]) => string[]);
 
 const saveNewGameToDb = async (gameId: number, domain: string, existedLevelsData?: LevelData[] | null) => {
   const parsedGameData: ParsedGameData = await getGameInfo(domain, gameId);
   const stat: ParsedGameStat = await getGameStat(domain, gameId, parsedGameData);
   const levelsData: LevelData[] = isNil(existedLevelsData)
     ? stat.levels
-    : zipWith(mergeWithKey(getExistedLevelType), existedLevelsData)(stat.levels);
+    : (zipWith(mergeWithKey(getExistedLevelType), existedLevelsData)(stat.levels) as LevelData[]);
   const gameData: GamePayload = {
     info: parsedGameData,
     stat: mergeRight(stat, { levels: levelsData }) as ParsedGameStat,
@@ -83,104 +88,99 @@ const saveNewGameToDb = async (gameId: number, domain: string, existedLevelsData
 };
 
 const mergeMonitoringData = (
-  [totalInputs, correctCodes]: [
-    Array<MonitoringTeamGroupedData | PlayerLevelData>,
-    Array<MonitoringTeamGroupedData | PlayerLevelData>,
-  ],
+  [totalInputs, correctCodes]: [AggregatedMonitoringData[], AggregatedMonitoringData[]],
   propName: string,
 ): Partial<MonitoringResponse> => ({
   parsed: true,
   totalData: pipe(
-    map((row: MonitoringTeamGroupedData | PlayerLevelData): MonitoringTeamGroupedData | PlayerLevelData => {
-      const uniqueId: string = path(['_id', propName], row) as string;
-      return pipe(
-        find(pathEq(['_id', propName], uniqueId)),
-        propOr(0, 'codesCounts'),
-        objOf('correctCodesQuantity'),
-        mergeRight(row),
-      )(correctCodes) as MonitoringTeamGroupedData | PlayerLevelData;
-    }),
-    map((row: MonitoringTeamGroupedData | PlayerLevelData): MonitoringTeamGroupedData | PlayerLevelData => {
-      const correctCodesPercent = ifElse(
-        pipe(
-          prop('codesCounts'),
-          anyPass([isNil, isEmpty, equals(0)]),
-        ),
-        always(0),
-        pipe(
-          propOr(0, 'correctCodesQuantity'),
-          flip(divide)(prop('codesCounts', row)),
-          multiply(100),
-        ),
-      )(row);
-      return mergeRight(row, { correctCodesPercent });
-    }),
-  )(totalInputs) as MonitoringTeamGroupedData[] | PlayerLevelData[],
+    map(
+      (row: AggregatedMonitoringData): AggregatedMonitoringData => {
+        const uniqueId: string = path(['_id', propName], row) as string;
+        return pipe(
+          find(pathEq(['_id', propName], uniqueId)),
+          propOr(0, 'codesCounts'),
+          objOf('correctCodesQuantity'),
+          mergeRight(row),
+        )(correctCodes) as AggregatedMonitoringData;
+      },
+    ),
+    map(
+      (row: AggregatedMonitoringData): AggregatedMonitoringData => {
+        const correctCodesPercent = ifElse(
+          pipe(
+            prop('codesCounts') as UnaryOperator<MonitoringTeamGroupedData | PlayerLevelData, null | number>,
+            anyPass([isNil, isEmpty, equals(0)]) as UnaryOperator<null | number, boolean>,
+          ) as UnaryOperator<MonitoringTeamGroupedData | PlayerLevelData, boolean>,
+          always(0),
+          pipe(
+            propOr(0, 'correctCodesQuantity') as UnaryOperator<MonitoringTeamGroupedData | PlayerLevelData, number>,
+            (correctCodesQuantity: number): number => correctCodesQuantity / prop('codesCounts', row),
+            multiply(100) as UnaryOperator<number, number>,
+          ) as UnaryOperator<MonitoringTeamGroupedData | PlayerLevelData, number>,
+        )(row) as number;
+        return mergeRight(row, { correctCodesPercent }) as MonitoringTeamGroupedData | PlayerLevelData;
+      },
+    ),
+  )(totalInputs),
 });
 
 const markDuplicates = (codeList: CodeEntry[]): CodeEntry[] =>
-  mapIndexed((code: CodeEntry, idx: number): CodeEntry => {
+  indexedMap((code: CodeEntry, idx: string): CodeEntry => {
     const isDuplicate: boolean = pipe(
-      curry(reduceCodeArray)(idx),
+      (list: CodeEntry[]): string[] => reduceCodeArray(+idx)(list),
       includes(prop('code', code)) as (data: string[]) => boolean,
     )(codeList);
 
     return mergeRight(code, { isDuplicate }) as CodeEntry;
   }, codeList);
+
 const calculateTimeDifference = (codeList: CodeEntry[]): CodeEntry[] =>
-  mapIndexed((code: CodeEntry, idx: number) => {
-    const prevCodeTime = pipe(
-      nth(idx + 1),
-      prop('time') as (data: CodeEntry) => string,
-      parseTime,
-    )(codeList);
+  indexedMap((code: CodeEntry, idx: string): CodeEntry => {
+    const prevCodeTime = pipe(nth(+idx + 1), prop('time') as UnaryOperator<CodeEntry, string>, parseTime)(codeList);
     const currentCodeTime = parseTime(code.time);
     const timeDiff = isNil(prevCodeTime) ? null : getDiff(currentCodeTime, prevCodeTime);
 
-    return mergeRight(code, { timeDiff });
+    return mergeRight(code, { timeDiff }) as CodeEntry;
   }, codeList);
 
-const getMonitoringDataByTeam = (gameId: number, teamId: number) =>
+const getMonitoringDataByTeam = (gameId: number, teamId: number): Promise<MonitoringTeamDetailedData> =>
   Promise.all([
-    getMonitoringByDetails(gameId, teamId, CodesRequestToDbType.LEVEL).then(results =>
+    getMonitoringByDetails<MonitoringLevelData>(gameId, teamId, CodesRequestToDbType.LEVEL).then((results) =>
       mergeMonitoringData(results, 'level'),
     ),
-    getMonitoringByDetails(gameId, teamId, CodesRequestToDbType.TEAM)
-      .then(results => mergeMonitoringData(results, 'userId'))
+    getMonitoringByDetails<PlayerGroupedData>(gameId, teamId, CodesRequestToDbType.TEAM)
+      .then((results) => mergeMonitoringData(results, 'userId'))
       .then(
         pipe(
-          prop('totalData') as (data: MonitoringResponse) => MonitoringTeamGroupedData[] | PlayerLevelData[],
+          prop('totalData') as UnaryOperator<MonitoringResponse, AggregatedMonitoringData[]>,
           sort(descend(prop('correctCodesQuantity'))),
         ),
       ),
-  ]).then(([dataByLevels, dataByUsers]) => ({
-    parsed: true,
-    dataByLevel: prop('totalData', dataByLevels),
-    dataByUser: dataByUsers,
-  }));
+  ]).then(
+    ([dataByLevels, dataByUsers]) =>
+      ({
+        parsed: true,
+        dataByLevel: prop('totalData', dataByLevels),
+        dataByUser: dataByUsers,
+      } as MonitoringTeamDetailedData),
+  );
 
 const getMonitoringDataByPlayer = (gameId: number, playerId: number) =>
-  getMonitoringByDetails(gameId, playerId, CodesRequestToDbType.PLAYER).then(results =>
+  getMonitoringByDetails<PlayerLevelData>(gameId, playerId, CodesRequestToDbType.PLAYER).then((results) =>
     mergeMonitoringData(results, 'level'),
   );
 
 const getCodesByLevel = (GameId: number, level: number, teamId: number) =>
   getMonitoringCodesFromDb({ GameId, teamId, level, type: 'level' }).then(
-    pipe(
-      markDuplicates,
-      calculateTimeDifference,
-    ),
+    pipe(markDuplicates, calculateTimeDifference),
   );
 
 const getCodesByPlayer = (GameId: number, level: number, userId: number) =>
   getMonitoringCodesFromDb({ GameId, userId, level, type: 'player' }).then(
-    pipe(
-      markDuplicates,
-      calculateTimeDifference,
-    ),
+    pipe(markDuplicates, calculateTimeDifference),
   );
 
-export const getSavedGames = () => getSavedGamesFromDb();
+export const getSavedGames = (): Promise<GameInfo[]> => getSavedGamesFromDb();
 
 export const getGameData = async ({ gameId, domain, isForceRefresh }: GameRequest): Promise<GameData> => {
   const data = await _getGameInfo(gameId);
@@ -202,14 +202,27 @@ export const getGameData = async ({ gameId, domain, isForceRefresh }: GameReques
   })(createdGameInfo) as GameData;
 };
 
-export const updateLevelData = ({ gameId, levels }: { gameId: number; levels: LevelData[] }) =>
+export const updateLevelData = ({ gameId, levels }: { gameId: number; levels: LevelData[] }): Promise<void> =>
   updateLevels(gameId, levels);
 
-export const getMonitoringData = async ({ gameId, domain }: GameRequest) => {
+export const getMonitoringData = async ({
+  gameId,
+  domain,
+}: GameRequest): Promise<
+  | {
+      parsed: boolean;
+    }
+  | Partial<MonitoringResponse>
+  | {
+      parsed: boolean;
+      totalPages: number;
+      parsedPages: number;
+    }
+> => {
   const data = await getMonitoringStatus(gameId);
   if (!isNil(data)) {
     if (data.parsed) {
-      return getTotalGameMonitoring(gameId).then(results => mergeMonitoringData(results, 'teamId'));
+      return getTotalGameMonitoring(gameId).then((results) => mergeMonitoringData(results, 'teamId'));
     }
     return data;
   }
@@ -217,7 +230,12 @@ export const getMonitoringData = async ({ gameId, domain }: GameRequest) => {
   return retrieveGameMonitoring(domain, gameId);
 };
 
-export const getMonitoringDetails = ({ gameId, teamId, playerId, detailsType }: DetailedMonitoringRequest) => {
+export const getMonitoringDetails = ({
+  gameId,
+  teamId,
+  playerId,
+  detailsType,
+}: DetailedMonitoringRequest): Promise<Partial<MonitoringResponse>> | Promise<MonitoringTeamDetailedData> | null => {
   if (detailsType === 'byPlayer' && playerId) {
     return getMonitoringDataByPlayer(gameId, playerId);
   }
@@ -227,7 +245,13 @@ export const getMonitoringDetails = ({ gameId, teamId, playerId, detailsType }: 
   return null;
 };
 
-export const getMonitoringCodes = ({ gameId, levelId, playerId, teamId, detailsType }: DetailedMonitoringRequest) => {
+export const getMonitoringCodes = ({
+  gameId,
+  levelId,
+  playerId,
+  teamId,
+  detailsType,
+}: DetailedMonitoringRequest): null | Promise<CodeEntry[]> => {
   if (!levelId) {
     return null;
   }

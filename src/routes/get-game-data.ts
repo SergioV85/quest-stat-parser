@@ -2,11 +2,8 @@ import { APIGatewayProxyHandler } from 'aws-lambda';
 import { pipe, path, pathOr, isNil } from 'ramda';
 import { getGameData } from './../app/controllers/game-management/game-management';
 
-export const gameDetailsHandler: APIGatewayProxyHandler = async event => {
-  const gameId: number = pipe(
-    path(['queryStringParameters', 'id']),
-    parseInt,
-  )(event);
+export const gameDetailsHandler: APIGatewayProxyHandler = async (event) => {
+  const gameId: number = pipe(path(['queryStringParameters', 'id']), parseInt)(event);
   const domain: string = path(['queryStringParameters', 'domain'], event) as string;
   const isForceRefresh: boolean = pathOr(false, ['queryStringParameters', 'force'], event);
 
@@ -17,14 +14,14 @@ export const gameDetailsHandler: APIGatewayProxyHandler = async event => {
     };
   }
   return getGameData({ gameId, domain, isForceRefresh })
-    .then(gameData => ({
+    .then((gameData) => ({
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify(gameData),
     }))
-    .catch(error => ({
+    .catch((error) => ({
       statusCode: 500,
       body: JSON.stringify(error),
     }));

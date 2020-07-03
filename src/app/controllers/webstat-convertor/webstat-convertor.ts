@@ -1,7 +1,7 @@
 import { load } from 'cheerio';
 import * as cheerioTableparser from 'cheerio-tableparser';
 import * as request from 'request-promise';
-import { slice, isNil, merge } from 'ramda';
+import { slice, isNil, mergeRight } from 'ramda';
 import { timesSeries } from 'async';
 import { CheerioTable, ParsedGameInfo, ParsedGameData, ParsedGameStat, CodeEntry } from './../../../models';
 import {
@@ -19,10 +19,10 @@ request.defaults({ jar: true });
 
 const removeObsoleteData = (rawData: string[][]) => slice(1, -1, rawData);
 
-const pageRequest = async (uri: string) =>
+const pageRequest = async (uri: string): Promise<CheerioStatic> =>
   request({
     uri,
-    transform: body => load(body),
+    transform: (body) => load(body),
   });
 
 const parseGameInfo = ($: CheerioStatic): ParsedGameInfo => {
@@ -49,23 +49,19 @@ const parseGameStat = ($: CheerioStatic, gameInfo: ParsedGameData): ParsedGameSt
   };
 };
 
-const parseMonitoringInfo = ($: CheerioStatic) =>
-  $('form')
-    .siblings('div')
-    .children('a')
-    .last()
-    .text();
+const parseMonitoringInfo = ($: CheerioStatic) => $('form').siblings('div').children('a').last().text();
 
 const parseMonitoringData = ($: CheerioStatic) => {
   cheerioTableparser($);
-  const tableData = ($('form > table > tbody')
-    .children()
-    .last()
-    .find('table') as CheerioTable).parsetable(true, true, false);
+  const tableData = ($('form > table > tbody').children().last().find('table') as CheerioTable).parsetable(
+    true,
+    true,
+    false,
+  );
   return parseRawMonitoringData(tableData);
 };
 
-const loginToEncounter = async (domain: string) =>
+const loginToEncounter = async (domain: string): Promise<void> =>
   request({
     method: 'POST',
     url: `http://${domain}/login/signin`,
@@ -75,7 +71,7 @@ const loginToEncounter = async (domain: string) =>
     },
     followAllRedirects: true,
   });
-const requestMonitoringPage = async (domain: string, gameId: number, page = 1) =>
+const requestMonitoringPage = async (domain: string, gameId: number, page = 1): Promise<CheerioStatic> =>
   request({
     method: 'GET',
     url: `http://${domain}/ALoader/GameLoader.aspx`,
@@ -85,10 +81,10 @@ const requestMonitoringPage = async (domain: string, gameId: number, page = 1) =
       item: 0,
       rnd: Math.random(),
     },
-    transform: body => load(body),
+    transform: (body) => load(body),
   });
 
-const getMonitoringData = (domain: string, gameId: number, i: number) =>
+const getMonitoringData = (domain: string, gameId: number, i: number): Promise<void> =>
   requestMonitoringPage(domain, gameId, i)
     .then(parseMonitoringData)
     .then((parsedData: CodeEntry[]) => saveMonitoringData(gameId, parsedData))
@@ -96,7 +92,7 @@ const getMonitoringData = (domain: string, gameId: number, i: number) =>
 
 const getMonitoring = (domain: string, gameId: number, numberOfPages: string) => {
   const totalPages = parseInt(numberOfPages, 10);
-  setMonitoringStatus(gameId, { parsed: false, totalPages });
+  void setMonitoringStatus(gameId, { parsed: false, totalPages });
 
   timesSeries(
     totalPages,
@@ -104,14 +100,14 @@ const getMonitoring = (domain: string, gameId: number, numberOfPages: string) =>
       setTimeout(() => {
         getMonitoringData(domain, gameId, i + 1)
           .then(() => next(null))
-          .catch(err => next(err));
+          .catch((err) => next(err));
       }, 1000);
     },
     (err: Error | null) => {
       if (isNil(err)) {
-        setMonitoringStatus(gameId, { parsed: true });
+        void setMonitoringStatus(gameId, { parsed: true });
       } else {
-        setMonitoringStatus(gameId, { parsed: false, gotError: true, error: err });
+        void setMonitoringStatus(gameId, { parsed: false, gotError: true, error: err });
       }
     },
   );
@@ -123,12 +119,12 @@ const getMonitoring = (domain: string, gameId: number, numberOfPages: string) =>
   };
 };
 
-export const getGameInfo = async (domain: string, gameId: number) => {
+export const getGameInfo = async (domain: string, gameId: number): Promise<ParsedGameData> => {
   const gameInfoHtml: CheerioStatic = await pageRequest(`http://${domain}/GameDetails.aspx?gid=${gameId}`);
-  return merge(parseGameInfo(gameInfoHtml), {
+  return mergeRight(parseGameInfo(gameInfoHtml), {
     id: gameId,
     domain,
-  });
+  }) as ParsedGameData;
 };
 
 export const getGameStat = async (
@@ -140,7 +136,14 @@ export const getGameStat = async (
   return parseGameStat(gameStatHtml, gameInfo);
 };
 
-export const retrieveGameMonitoring = async (domain: string, gameId: number) => {
+export const retrieveGameMonitoring = async (
+  domain: string,
+  gameId: number,
+): Promise<{
+  parsed: boolean;
+  totalPages: number;
+  parsedPages: number;
+}> => {
   await loginToEncounter(domain);
   const rawData = await requestMonitoringPage(domain, gameId);
   const numberOfPages = parseMonitoringInfo(rawData);
