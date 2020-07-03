@@ -44,6 +44,8 @@ export interface GameData {
   };
 }
 
+export type AggregatedGameData = GameInfo & GameData['stat'];
+
 export interface GameRequest {
   gameId: number;
   domain: string;

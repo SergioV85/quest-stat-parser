@@ -62,10 +62,17 @@ export interface MonitoringStatus {
   parsed: boolean;
   totalPages: number;
 }
+
+export type AggregatedMonitoringData =
+  | MonitoringTeamGroupedData
+  | PlayerLevelData
+  | MonitoringLevelData
+  | PlayerGroupedData;
+
 export interface MonitoringResponse extends MonitoringStatus {
   GameId?: number;
   _id?: number;
-  totalData: MonitoringTeamGroupedData[] | PlayerLevelData[];
+  totalData: AggregatedMonitoringData[];
   dataByLevel?: MonitoringLevelData[];
   dataByUser?: PlayerGroupedData[];
 }

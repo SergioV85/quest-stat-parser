@@ -3,14 +3,14 @@ import { getSavedGames } from './../app/controllers/game-management/game-managem
 
 export const gamesHandler: APIGatewayProxyHandler = async () =>
   getSavedGames()
-    .then(games => ({
+    .then((games) => ({
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify(games),
     }))
-    .catch(error => ({
+    .catch((error) => ({
       statusCode: 500,
       body: JSON.stringify(error),
     }));

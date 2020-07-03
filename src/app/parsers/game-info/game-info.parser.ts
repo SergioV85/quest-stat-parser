@@ -1,6 +1,7 @@
 import { pipe, find, test, match, head, slice, replace, last, map } from 'ramda';
 import { decode } from 'he';
 import { convertTime } from './../time/time.parser';
+import { UnaryOperator } from '../../../models';
 
 const convertTimeZone = (n: number) => {
   const prefix = n < 10 ? '0' : '';
@@ -8,7 +9,7 @@ const convertTimeZone = (n: number) => {
 };
 
 const parseGameInfo = (row: string[]) => {
-  const timeRegExp = new RegExp(/(\d{2}\.\d{2}\.\d{4}\s\d{1,2}\:\d{2}:\d{2})/);
+  const timeRegExp = new RegExp(/(\d{2}\.\d{2}\.\d{4}\s\d{1,2}:\d{2}:\d{2})/);
 
   const name: string = pipe(
     find(test(/lnkGameTitle/)),
@@ -29,15 +30,15 @@ const parseGameInfo = (row: string[]) => {
   )(row);
 
   const start: string = pipe(
-    find(test(/Начало игры/)),
-    match(timeRegExp),
-    head,
+    find(test(/Начало игры/)) as UnaryOperator<string[], string>,
+    match(timeRegExp) as UnaryOperator<string, string[]>,
+    head as UnaryOperator<string[], string>,
   )(row);
 
   const finish: string = pipe(
-    find(test(/Время окончания/)),
-    match(timeRegExp),
-    head,
+    find(test(/Время окончания/)) as UnaryOperator<string[], string>,
+    match(timeRegExp) as UnaryOperator<string, string[]>,
+    head as UnaryOperator<string[], string>,
   )(row);
 
   const startStringWithTimeZone = `${start}.000${timezone}`;
@@ -51,8 +52,4 @@ const parseGameInfo = (row: string[]) => {
   };
 };
 
-export const getGameInfo = pipe(
-  head,
-  map(decode),
-  parseGameInfo,
-);
+export const getGameInfo = pipe(head, map(decode), parseGameInfo);

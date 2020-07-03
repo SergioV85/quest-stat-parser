@@ -22,30 +22,10 @@ const filterEmptyAndObsoleteValues: (data: string[]) => string[] = pipe(
   drop(1),
 );
 
-const getTeamName: (d: string) => string = pipe(
-  decode,
-  match(/>.*?</g),
-  head,
-  slice(1, -1) as (d: string) => string,
-);
-const getTeamId: (d: string) => number = pipe(
-  match(/tid=\d*/g),
-  head,
-  replace('tid=', ''),
-  parseInt,
-);
-const getUserName: (d: string) => string = pipe(
-  decode,
-  match(/>.*?</g),
-  last,
-  slice(1, -1) as (d: string) => string,
-);
-const getUserId: (d: string) => number = pipe(
-  match(/uid=\d*/g),
-  head,
-  replace('uid=', ''),
-  parseInt,
-);
+const getTeamName: (d: string) => string = pipe(decode, match(/>.*?</g), head, slice(1, -1) as (d: string) => string);
+const getTeamId: (d: string) => number = pipe(match(/tid=\d*/g), head, replace('tid=', ''), parseInt);
+const getUserName: (d: string) => string = pipe(decode, match(/>.*?</g), last, slice(1, -1) as (d: string) => string);
+const getUserId: (d: string) => number = pipe(match(/uid=\d*/g), head, replace('uid=', ''), parseInt);
 const isAnswerCorrect: (d: string) => boolean = pipe(
   decode,
   match(/>.*?</g),
@@ -53,18 +33,9 @@ const isAnswerCorrect: (d: string) => boolean = pipe(
   slice(1, -1) as (d: string) => string,
   equals('в'),
 );
-const getCode: (d: string) => string = pipe(
-  decode,
-  replace(/<.*?>/g, ''),
-);
-const isTimeout: (d: string) => boolean = pipe(
-  getCode,
-  test(/таймауту/g),
-);
-const isRemoved: (d: string) => boolean = pipe(
-  getCode,
-  test(/Уровень снят/g),
-);
+const getCode: (d: string) => string = pipe(decode, replace(/<.*?>/g, ''));
+const isTimeout: (d: string) => boolean = pipe(getCode, test(/таймауту/g));
+const isRemoved: (d: string) => boolean = pipe(getCode, test(/Уровень снят/g));
 
 const convertToEntry = ([levelNumber, teamAndUser, answerStatus, code, time]: string[]): Partial<CodeEntry> => ({
   level: parseInt(levelNumber, 10),
@@ -83,7 +54,6 @@ const convertToEntry = ([levelNumber, teamAndUser, answerStatus, code, time]: st
 
 export const parseRawMonitoringData: (raw: string[][]) => Array<Partial<CodeEntry>> = pipe(
   map(filterEmptyAndObsoleteValues),
-  // tslint:disable-next-line: no-any
-  transpose as any,
+  transpose,
   map(convertToEntry),
 );
