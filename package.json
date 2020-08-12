@@ -9,6 +9,7 @@
   "scripts": {
     "compile": "tsc --declaration",
     "deploy": "serverless deploy",
+    "debug": "SET SLS_DEBUG=* && node --inspect ./node_modules/serverless/bin/serverless offline -s dev",
     "test": "ts-mocha -p tsconfig.json src/**/*.test.ts",
     "test:coverage": "nyc ts-mocha -p tsconfig.json src/**/*.test.ts",
     "test:ci": "npm run test:coverage && npm run prepare-code-coverage-report",

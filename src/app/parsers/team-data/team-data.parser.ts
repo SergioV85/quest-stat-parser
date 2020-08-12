@@ -104,7 +104,7 @@ const getTeamName: (x: string) => string = pipe(
 const getLevelTime = (rawString: string, gameData: ParsedGameInfo): string =>
   pipe(
     decode,
-    match(/(\d{2}.\d{2}.\d{4}|\d{1,2}:\d{2}:\d{2}.\d{3})/g),
+    match(/(\d{2}\.\d{2}\.\d{4}|\d{1,2}:\d{2}:\d{2}.\d{3})/g),
     insert(1, ' '),
     append(pathOr('Z', ['timezone'], gameData)),
     join(''),
