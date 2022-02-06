@@ -33,7 +33,7 @@
     "he": "^1.2.0",
     "mongodb": "~3.6.3",
     "mz": "^2.7.0",
-    "ramda": "^0.27.0",
+    "ramda": "^0.28.0",
     "request": "^2.85.0",
     "request-promise": "^4.2.1",
     "source-map-support": "^0.5.13",
